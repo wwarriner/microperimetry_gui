@@ -10,7 +10,7 @@ classdef microperimetry_gui < matlab.apps.AppBase
         LoadDataButton            matlab.ui.control.Button
         DisplayValuesSwitchLabel  matlab.ui.control.Label
         DisplayValuesSwitch       matlab.ui.control.Switch
-        SavefigureasButton        matlab.ui.control.Button
+        SaveFigureAsButton        matlab.ui.control.Button
         DisplayPanel              matlab.ui.container.Panel
     end
 
@@ -52,7 +52,7 @@ classdef microperimetry_gui < matlab.apps.AppBase
 
         % Button pushed function: LoadDataButton
         function LoadDataButtonPushed(app, event)
-            [file, path] = uigetfile("*.csv", "Load CSV microperimetry data file");
+            [file, path] = uigetfile("*.csv", "Load CSV microperimetry data file...");
             if file == 0
                 return;
             end
@@ -61,7 +61,7 @@ classdef microperimetry_gui < matlab.apps.AppBase
             try
                 app.data.load_csv(path);
             catch e
-                uialert(app.UIFigure, ["Error loading file", e.message]);
+                uialert(app.UIFigure, e.message, "Error loading file");
             end
             app.axes.update();
         end
@@ -70,6 +70,51 @@ classdef microperimetry_gui < matlab.apps.AppBase
         function DisplayValuesSwitchValueChanged(app, event)
             app.axes.label_visibility_state = string(app.DisplayValuesSwitch.Value);
             app.axes.update_label_visibility();
+        end
+
+        % Button pushed function: SaveFigureAsButton
+        function SaveFigureAsButtonPushed(app, event)
+            PNG_FILTER = "*.png";
+            PDF_FILTER = "*.pdf";
+            EPS_FILTER = "*.eps";
+            TEX_FILTER = "*.tex";
+            filters = [PNG_FILTER; PDF_FILTER; EPS_FILTER; TEX_FILTER];
+            default_name = sprintf("microperimetry_figure_pt%d_eye%d", app.data.id, app.data.eye);
+            [file, path, index] = uiputfile(filters, "Save figure as...", default_name);
+            if file == 0
+                return;
+            end
+            path = fullfile(path, file);
+            
+            fh = figure();
+            fh.Color = "w";
+            closer = onCleanup(@()close(fh));
+            fh.Visible = "off";
+            fh.Position = app.DisplayPanel.Position();
+            ax = MicroperimetryAxesArray(fh, app.data);
+            ax.row_titles = ["Mesopic" "Scotopic"];
+            ax.col_titles = ["Case" "Group Means" "Z-Scores"];
+            ax.build();
+            ax.label_visibility_state = string(app.DisplayValuesSwitch.Value);
+            ax.update();
+            handle = fh;
+            
+            try
+                switch filters(index)
+                    case PNG_FILTER
+                        export_fig(path, handle);
+                    case PDF_FILTER
+                        export_fig(path, handle);
+                    case EPS_FILTER
+                        export_fig(path, handle);
+                    case TEX_FILTER
+                        matlab2tikz(char(path), char("figurehandle"), handle)
+                    otherwise
+                        assert(false);
+                end
+            catch e
+                uialert(app.UIFigure, e.message, "Error saving figure");
+            end
         end
     end
 
@@ -134,11 +179,12 @@ classdef microperimetry_gui < matlab.apps.AppBase
             app.DisplayValuesSwitch.Position = [38 601 62 27];
             app.DisplayValuesSwitch.Value = 'On';
 
-            % Create SavefigureasButton
-            app.SavefigureasButton = uibutton(app.OptionsPanel, 'push');
-            app.SavefigureasButton.FontSize = 16;
-            app.SavefigureasButton.Position = [5.5 10 131 40];
-            app.SavefigureasButton.Text = 'Save figure as...';
+            % Create SaveFigureAsButton
+            app.SaveFigureAsButton = uibutton(app.OptionsPanel, 'push');
+            app.SaveFigureAsButton.ButtonPushedFcn = createCallbackFcn(app, @SaveFigureAsButtonPushed, true);
+            app.SaveFigureAsButton.FontSize = 16;
+            app.SaveFigureAsButton.Position = [11 10 118 40];
+            app.SaveFigureAsButton.Text = 'Save figure as...';
 
             % Create DisplayPanel
             app.DisplayPanel = uipanel(app.UIFigure);
