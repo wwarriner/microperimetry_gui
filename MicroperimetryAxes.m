@@ -13,44 +13,88 @@ classdef MicroperimetryAxes < handle
     
     methods
         function obj = MicroperimetryAxes(parent, position)
-            d = axes(parent);
-            d.Units = "pixels";
-            d.Position = position;
-            d.XAxisLocation = "bottom";
-            d.YAxisLocation = "left";
-            d.TickLabelInterpreter = "latex";
-            d.Color = "w";
-            
             m = axes(parent);
             m.Units = "pixels";
             m.Position = position;
             m.XAxisLocation = "top";
             m.YAxisLocation = "right";
             m.TickLabelInterpreter = "latex";
-            m.Color = "none";
+            m.Color = "w";
+            m.Toolbar.Visible = "off";
+            m.Interactions = [];
+            
+            d = axes(parent);
+            d.Units = "pixels";
+            d.Position = position;
+            d.XAxisLocation = "bottom";
+            d.YAxisLocation = "left";
+            d.TickLabelInterpreter = "latex";
+            d.Color = "none";
+            m.Toolbar.Visible = "off";
+            m.Interactions = [];
+            
+            s = scatter(d, 0, 0, 1, 0, "filled");
+            s.XData = [];
+            s.YData = [];
+            s.CData = [];
+            s.MarkerEdgeColor = [0 0 0];
+            d.Color = "none"; % scatter() changes background color
             
             obj.deg_ax = d;
             obj.mm_ax = m;
+            obj.scatter_h = s;
         end
         
         function build(obj)
-            obj.build_axes(obj.DEG_UNITS);
             obj.build_axes(obj.MM_UNITS);
+            grid = EtdrsGrid();
+            grid.apply(obj.mm_ax);
+            obj.build_axes(obj.DEG_UNITS);
         end
         
-        function set_data(obj, data, point_size)
-            x = data(:, 1);
-            y = data(:, 2);
-            v = data(:, 3);
-            scatter(obj.deg_ax, x, y, point_size, v, "filled");
-            % generate labels from v
-            % text(x, y, labels)
+        function set_data(obj, x, y, v, point_size)
+            % todo assert
+            
+            obj.scatter_h.XData = x;
+            obj.scatter_h.YData = y;
+            obj.scatter_h.CData = v;
+            obj.scatter_h.SizeData = point_size;
+            obj.build_labels(x, y, v);
+        end
+        
+        function set_label_position(obj, x, y)
+            % todo assert
+            
+            obj.scatter_h.XData = x;
+            obj.scatter_h.YData = y;
+            obj.update_labels();
+            
+            for i = 1 : numel(obj.scatter_h.CData)
+                obj.text_h(i).Position(1:2) = [x(i) y(i)];
+            end
+        end
+        
+        function set_label_visibility_state(obj, state)
+            count = numel(obj.text_h);
+            if count == 0
+                return;
+            end
+            switch state
+                case "On"
+                    [obj.text_h.Visible] = deal("on");
+                case "Off"
+                    [obj.text_h.Visible] = deal("off");
+                otherwise
+                    assert(false);
+            end
         end
     end
     
     properties (Access = private)
         deg_ax matlab.graphics.axis.Axes
         mm_ax matlab.graphics.axis.Axes
+        scatter_h matlab.graphics.chart.primitive.Scatter
+        text_h matlab.graphics.primitive.Text
     end
     
     properties (Access = private, Constant)
@@ -68,6 +112,32 @@ classdef MicroperimetryAxes < handle
     end
     
     methods (Access = private)
+        function build_labels(obj, x, y, v)
+            v_count = numel(v);
+            if v_count ~= numel(obj.text_h)
+                obj.text_h = matlab.graphics.primitive.Text.empty(0, v_count);
+                for i = 1 : v_count
+                     th = text(obj.deg_ax, x(i), y(i), obj.to_string(v(i)));
+                     th.VerticalAlignment = "top";
+                     th.HorizontalAlignment = "left";
+                     th.Interpreter = "latex";
+                     obj.text_h(i) = th;
+                end
+            else
+                obj.update_labels();
+            end
+        end
+        
+        function update_labels(obj)
+            v = obj.scatter_h.CData;
+            for i = 1 : numel(v)
+                obj.text_h(i).String = obj.to_string(v(i));
+            end
+        end
+        
+        function reposition_labels(obj, x, y)
+        end
+        
         function build_axes(obj, units)
             ax = obj.get_axes(units);
             
@@ -156,6 +226,10 @@ classdef MicroperimetryAxes < handle
         
         function label = to_tick_label(tick)
             label = string(num2str(abs(tick.'))).';
+        end
+        
+        function v = to_string(d)
+            v = sprintf("$%s$", num2str(d, "%.1f"));
         end
     end
 end

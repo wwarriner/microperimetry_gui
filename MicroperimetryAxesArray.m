@@ -4,6 +4,9 @@ classdef MicroperimetryAxesArray < handle
         col_titles (1,:) string
         axis_size (1,2) double = [320, 320];
         in_padding (1,2) double = [20, 20];
+        point_size (1,1) double = 60;
+        
+        label_visibility_state (1,1) string
     end
     
     methods
@@ -36,10 +39,32 @@ classdef MicroperimetryAxesArray < handle
         function update(obj)
             for i = 1 : numel(obj.handles)
                 vision_type = Label.MESOPIC;
-                value_name = obj.data.value_names(1);
-                values = obj.data.get(vision_type, value_name);
+                if obj.data.count == 0
+                    return;
+                end
+                value_name = obj.data.value_names(1); % TODO
+                values = obj.data.get_values(vision_type, value_name);
                 h = obj.handles{i};
-                h.set_data([obj.data.coordinates values], 45);
+                h.set_data(values.x, values.y, values.v, obj.point_size);
+            end
+            obj.update_label_visibility();
+            obj.update_chirality();
+        end
+        
+        function update_label_visibility(obj)
+            for i = 1 : numel(obj.handles)
+                h = obj.handles{i};
+                h.set_label_visibility_state(obj.label_visibility_state);
+            end
+        end
+        
+        function update_chirality(obj)
+            for i = 1 : numel(obj.handles)
+                if obj.data.count == 0
+                    return;
+                end
+                h = obj.handles{i};
+                h.set_label_position(obj.data.get_x(), obj.data.get_y());
             end
         end
     end
@@ -47,11 +72,12 @@ classdef MicroperimetryAxesArray < handle
     properties (Access = private)
         data MicroperimetryData
         parent
-        row_labels (:, 1)
-        col_labels (:, 1)
-        handles (:, :) cell
-        pre_pad (:, :)
-        post_pad (:, :)
+        row_labels (:,1)
+        col_labels (:,1)
+        handles (:,:) cell
+        pre_pad (:,:)
+        post_pad (:,:)
+        
     end
     
     methods (Access = private)
