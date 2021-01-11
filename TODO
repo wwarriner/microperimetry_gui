@@ -1,0 +1,4 @@
+- colorbar and colormap
+- compass rose for NSTI in each axes
+- tests
+- assertions
