@@ -73,24 +73,24 @@ classdef MicroperimetryData < handle
                     assert(false);
             end
             assert(~isempty(value));
-            values.x = obj.get_x();
-            values.y = obj.get_y();
-            values.v = value.';
+            values.x = obj.get_x(vision_type);
+            values.y = obj.get_y(vision_type);
+            values.v = obj.coordinates.limit_to_used(value.', vision_type);
         end
         
-        function value = get_x(obj)
+        function value = get_x(obj, vision_type)
             switch obj.chirality
                 case obj.OD_CHIRALITY
-                    value = obj.coordinates.x;
+                    value = obj.coordinates.get_x(vision_type);
                 case obj.OS_CHIRALITY
-                    value = -obj.coordinates.x;
+                    value = -obj.coordinates.get_x(vision_type);
                 otherwise
                     assert(false);
             end
         end
         
-        function value = get_y(obj)
-            value = obj.coordinates.y;
+        function value = get_y(obj, vision_type)
+            value = obj.coordinates.get_y(vision_type);
         end
         
         function value = get.count(obj)
@@ -110,4 +110,3 @@ classdef MicroperimetryData < handle
         end
     end
 end
-

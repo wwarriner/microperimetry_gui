@@ -1,7 +1,4 @@
 classdef MicroperimetryAxes < handle
-    %MICROPERIMETRYAXES Summary of this class goes here
-    %   Detailed explanation goes here
-    
     properties
         x_title (1,1) string = ""
         y_title (1,1) string = ""
@@ -28,17 +25,17 @@ classdef MicroperimetryAxes < handle
             d.Position = position;
             d.XAxisLocation = "bottom";
             d.YAxisLocation = "left";
-            d.TickLabelInterpreter = "latex";
-            d.Color = "none";
-            m.Toolbar.Visible = "off";
-            m.Interactions = [];
             
             s = scatter(d, 0, 0, 1, 0, "filled");
             s.XData = [];
             s.YData = [];
             s.CData = [];
             s.MarkerEdgeColor = [0 0 0];
+            
+            d.TickLabelInterpreter = "latex";
             d.Color = "none"; % scatter() changes background color
+            d.Toolbar.Visible = "off";
+            d.Interactions = [];
             
             obj.deg_ax = d;
             obj.mm_ax = m;
@@ -113,18 +110,17 @@ classdef MicroperimetryAxes < handle
     
     methods (Access = private)
         function build_labels(obj, x, y, v)
+            for h = obj.text_h(:)
+                delete(h);
+            end
             v_count = numel(v);
-            if v_count ~= numel(obj.text_h)
-                obj.text_h = matlab.graphics.primitive.Text.empty(0, v_count);
-                for i = 1 : v_count
-                     th = text(obj.deg_ax, x(i), y(i), obj.to_string(v(i)));
-                     th.VerticalAlignment = "top";
-                     th.HorizontalAlignment = "left";
-                     th.Interpreter = "latex";
-                     obj.text_h(i) = th;
-                end
-            else
-                obj.update_labels();
+            obj.text_h = matlab.graphics.primitive.Text.empty(0, v_count);
+            for i = 1 : v_count
+                th = text(obj.deg_ax, x(i), y(i), obj.to_string(v(i)));
+                th.VerticalAlignment = "top";
+                th.HorizontalAlignment = "left";
+                th.Interpreter = "latex";
+                obj.text_h(i) = th;
             end
         end
         
@@ -133,9 +129,6 @@ classdef MicroperimetryAxes < handle
             for i = 1 : numel(v)
                 obj.text_h(i).String = obj.to_string(v(i));
             end
-        end
-        
-        function reposition_labels(obj, x, y)
         end
         
         function build_axes(obj, units)
@@ -154,11 +147,13 @@ classdef MicroperimetryAxes < handle
             is_top = obj.top && units == obj.MM_UNITS;
             if  is_top || (obj.bottom && units == obj.DEG_UNITS)
                 ax.XLabel.String = obj.build_label(obj.X, units, is_top);
+                ax.XLabel.Interpreter = "latex";
                 ax.XTickLabel = obj.build_tick_label(units);
             end
             is_left = obj.left && units == obj.DEG_UNITS;
             if  is_left || (obj.right && units == obj.MM_UNITS)
                 ax.YLabel.String = obj.build_label(obj.Y, units, is_left);
+                ax.YLabel.Interpreter = "latex";
                 ax.YTickLabel = obj.build_tick_label(units);
             end
         end

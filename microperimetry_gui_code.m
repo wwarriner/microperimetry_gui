@@ -30,8 +30,6 @@ classdef microperimetry_gui < matlab.apps.AppBase
             d = MicroperimetryData(c);
             
             ax = MicroperimetryAxesArray(app.DisplayPanel, d);
-            ax.row_titles = ["Mesopic" "Scotopic"];
-            ax.col_titles = ["Case" "Group Means" "Z-Scores"];
             ax.build();
             ax.label_visibility_state = string(app.DisplayValuesSwitch.Value);
             ax.update();
@@ -92,8 +90,8 @@ classdef microperimetry_gui < matlab.apps.AppBase
             fh.Visible = "off";
             fh.Position = app.DisplayPanel.Position();
             ax = MicroperimetryAxesArray(fh, app.data);
-            ax.row_titles = ["Mesopic" "Scotopic"];
-            ax.col_titles = ["Case" "Group Means" "Z-Scores"];
+            ax.row_titles = app.axes.row_titles;
+            ax.col_titles = app.axes.col_titles;
             ax.build();
             ax.label_visibility_state = string(app.DisplayValuesSwitch.Value);
             ax.update();
@@ -184,7 +182,7 @@ classdef microperimetry_gui < matlab.apps.AppBase
             app.SaveFigureAsButton.ButtonPushedFcn = createCallbackFcn(app, @SaveFigureAsButtonPushed, true);
             app.SaveFigureAsButton.FontSize = 16;
             app.SaveFigureAsButton.Position = [11 10 118 40];
-            app.SaveFigureAsButton.Text = 'Save figure as...';
+            app.SaveFigureAsButton.Text = 'Save figure...';
 
             % Create DisplayPanel
             app.DisplayPanel = uipanel(app.UIFigure);

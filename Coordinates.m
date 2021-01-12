@@ -1,9 +1,4 @@
 classdef Coordinates < handle
-    properties (SetAccess = private)
-        x (:,1) double {mustBeReal,mustBeFinite}
-        y (:,1) double {mustBeReal,mustBeFinite}
-    end
-    
     methods
         function obj = Coordinates(csv_file_path)
             %{
@@ -11,8 +6,7 @@ classdef Coordinates < handle
             each row is one point
             %}
             if nargin == 0
-                obj.x = [];
-                obj.y = [];
+                obj.t = table();
             end
             
             t = readtable(csv_file_path);
@@ -22,10 +16,28 @@ classdef Coordinates < handle
             t.Properties.VariableNames = lower(t.Properties.VariableNames);
             assert(ismember("x", t.Properties.VariableNames));
             assert(ismember("y", t.Properties.VariableNames));
+            assert(ismember(lower(Definitions.MESOPIC), t.Properties.VariableNames));
+            assert(ismember(lower(Definitions.SCOTOPIC), t.Properties.VariableNames));
             
-            obj.x = t.x;
-            obj.y = t.y;
+            obj.t = t;
         end
+        
+        function x = get_x(obj, vision_type)
+            x = obj.limit_to_used(obj.t.x, vision_type);
+        end
+        
+        function y = get_y(obj, vision_type)
+            y = obj.limit_to_used(obj.t.y, vision_type);
+        end
+        
+        function v = limit_to_used(obj, v, vision_type)
+            used = logical(obj.t{:, vision_type});
+            v = v(used);
+        end
+    end
+    
+    properties (Access = private)
+        t (:,:) table
     end
 end
 
