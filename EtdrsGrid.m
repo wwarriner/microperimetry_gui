@@ -22,7 +22,9 @@ classdef EtdrsGrid < handle
                 obj.draw_radial_line(axh, angle, radii);
             end
             
-            % TODO blind spot
+            ph = obj.draw_circle(axh, obj.OPTIC_DISK_CENTER, obj.OPTIC_DISK_RADIUS, true);
+            ph.EdgeColor = obj.OPTIC_DISK_EDGE_GRAY;
+            ph.FaceColor = obj.OPTIC_DISK_FACE_GRAY;
             
             if ~is_held
                 hold(axh, "off");
@@ -38,6 +40,12 @@ classdef EtdrsGrid < handle
         
         EDGE_GRAY = [0.5 0.5 0.5];
         FACE_GRAY = [0.95 0.95 0.95];
+        
+        OPTIC_DISK_CENTER = [-4.32 0.66];
+        OPTIC_DISK_RADIUS = 0.92;
+        
+        OPTIC_DISK_EDGE_GRAY = [0.25 0.25 0.25];
+        OPTIC_DISK_FACE_GRAY = [0.5 0.5 0.5];
     end
     
     methods (Access = private)
