@@ -45,9 +45,9 @@ classdef MicroperimetryData < handle
                 label = labels{c};
                 value = t{:, label.text};
                 switch label.vision_type
-                    case Label.MESOPIC
+                    case Definitions.MESOPIC
                         meso(:, label.index) = value;
-                    case Label.SCOTOPIC
+                    case Definitions.SCOTOPIC
                         scoto(:, label.index) = value;
                     otherwise
                         assert(false)
@@ -65,9 +65,9 @@ classdef MicroperimetryData < handle
             value = [];
             value_index = obj.to_index(value_name);
             switch vision_type
-                case Label.MESOPIC
+                case Definitions.MESOPIC
                     value = obj.mesopic(value_index, :);
-                case Label.SCOTOPIC
+                case Definitions.SCOTOPIC
                     value = obj.scotopic(value_index, :);
                 otherwise
                     assert(false);

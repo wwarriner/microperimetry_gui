@@ -1,10 +1,6 @@
 classdef MicroperimetryAxesArray < handle
     properties
-        row_titles (1,:) string
-        col_titles (1,:) string
-        axis_size (1,2) double = [320, 320];
-        in_padding (1,2) double = [20, 20];
-        point_size (1,1) double = 60;
+        row_titles (1,2) string = [init_cap(Definitions.MESOPIC) init_cap(Definitions.SCOTOPIC)]
         
         label_visibility_state (1,1) string
     end
@@ -77,7 +73,10 @@ classdef MicroperimetryAxesArray < handle
         handles (:,:) cell
         pre_pad (:,:)
         post_pad (:,:)
-        
+    end
+    
+    properties (Access = private, Constant)
+        VISION_TYPE (1,2) string = [Definitions.MESOPIC, Definitions.SCOTOPIC]
     end
     
     methods (Access = private)

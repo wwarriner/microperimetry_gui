@@ -5,11 +5,6 @@ classdef Label
         text (1,1) string
     end
     
-    properties (Constant)
-        MESOPIC = "mesopic";
-        SCOTOPIC = "scotopic";
-    end
-    
     methods
         function obj = Label(text)
             [t, i] = obj.parse(text);
@@ -18,7 +13,7 @@ classdef Label
             obj.text = text;
         end
     end
-       
+    
     methods (Static)
         function out = is_label(text)
             out = false;
@@ -48,14 +43,13 @@ classdef Label
         end
         
         function t = to_full_type(text)
-            if startsWith(Label.MESOPIC, text, "ignorecase", true)
-                t = Label.MESOPIC;
-            elseif startsWith(Label.SCOTOPIC, text, "ignorecase", true)
-                t = Label.SCOTOPIC;
+            if startsWith(Definitions.MESOPIC, text, "ignorecase", true)
+                t = Definitions.MESOPIC;
+            elseif startsWith(Definitions.SCOTOPIC, text, "ignorecase", true)
+                t = Definitions.SCOTOPIC;
             else
                 error("microperimetry_gui:label:unknown_type", "Unknown type %s", text);
             end
         end
     end
 end
-
