@@ -133,6 +133,7 @@ classdef microperimetry_gui < matlab.apps.AppBase
             app.OptionsPanel = uipanel(app.UIFigure);
             app.OptionsPanel.AutoResizeChildren = 'off';
             app.OptionsPanel.Title = 'Options';
+            app.OptionsPanel.FontSize = 14;
             app.OptionsPanel.Position = [1 1 140 840];
 
             % Create EyeSideButtonGroup
@@ -140,54 +141,55 @@ classdef microperimetry_gui < matlab.apps.AppBase
             app.EyeSideButtonGroup.AutoResizeChildren = 'off';
             app.EyeSideButtonGroup.SelectionChangedFcn = createCallbackFcn(app, @EyeSideButtonGroupSelectionChanged, true);
             app.EyeSideButtonGroup.Title = 'Eye Side';
-            app.EyeSideButtonGroup.FontSize = 16;
-            app.EyeSideButtonGroup.Position = [11 670 118 90];
+            app.EyeSideButtonGroup.FontSize = 14;
+            app.EyeSideButtonGroup.Position = [11 668 118 90];
 
             % Create ODButton
             app.ODButton = uitogglebutton(app.EyeSideButtonGroup);
             app.ODButton.Text = 'OD';
-            app.ODButton.FontSize = 16;
-            app.ODButton.Position = [11 9 49 49];
+            app.ODButton.FontSize = 14;
+            app.ODButton.Position = [11 11 49 49];
             app.ODButton.Value = true;
 
             % Create OSButton
             app.OSButton = uitogglebutton(app.EyeSideButtonGroup);
             app.OSButton.Text = 'OS';
-            app.OSButton.FontSize = 16;
-            app.OSButton.Position = [60 9 49 49];
+            app.OSButton.FontSize = 14;
+            app.OSButton.Position = [60 11 49 49];
 
             % Create LoadDataButton
             app.LoadDataButton = uibutton(app.OptionsPanel, 'push');
             app.LoadDataButton.ButtonPushedFcn = createCallbackFcn(app, @LoadDataButtonPushed, true);
-            app.LoadDataButton.FontSize = 16;
-            app.LoadDataButton.Position = [11 770 118 40];
+            app.LoadDataButton.FontSize = 14;
+            app.LoadDataButton.Position = [11 768 118 40];
             app.LoadDataButton.Text = 'Load data...';
 
             % Create DisplayValuesSwitchLabel
             app.DisplayValuesSwitchLabel = uilabel(app.OptionsPanel);
             app.DisplayValuesSwitchLabel.HorizontalAlignment = 'center';
-            app.DisplayValuesSwitchLabel.FontSize = 16;
-            app.DisplayValuesSwitchLabel.Position = [14 636 110 22];
+            app.DisplayValuesSwitchLabel.FontSize = 14;
+            app.DisplayValuesSwitchLabel.Position = [20.5 634 97 22];
             app.DisplayValuesSwitchLabel.Text = 'Display Values';
 
             % Create DisplayValuesSwitch
             app.DisplayValuesSwitch = uiswitch(app.OptionsPanel, 'slider');
             app.DisplayValuesSwitch.ValueChangedFcn = createCallbackFcn(app, @DisplayValuesSwitchValueChanged, true);
-            app.DisplayValuesSwitch.FontSize = 16;
-            app.DisplayValuesSwitch.Position = [38 601 62 27];
+            app.DisplayValuesSwitch.FontSize = 14;
+            app.DisplayValuesSwitch.Position = [38 599 62 27];
             app.DisplayValuesSwitch.Value = 'On';
 
             % Create SaveFigureAsButton
             app.SaveFigureAsButton = uibutton(app.OptionsPanel, 'push');
             app.SaveFigureAsButton.ButtonPushedFcn = createCallbackFcn(app, @SaveFigureAsButtonPushed, true);
-            app.SaveFigureAsButton.FontSize = 16;
-            app.SaveFigureAsButton.Position = [11 10 118 40];
+            app.SaveFigureAsButton.FontSize = 14;
+            app.SaveFigureAsButton.Position = [11 8 118 40];
             app.SaveFigureAsButton.Text = 'Save figure...';
 
             % Create DisplayPanel
             app.DisplayPanel = uipanel(app.UIFigure);
             app.DisplayPanel.AutoResizeChildren = 'off';
             app.DisplayPanel.Title = 'Display';
+            app.DisplayPanel.FontSize = 14;
             app.DisplayPanel.Position = [141 1 1140 840];
 
             % Show the figure after all components are created
