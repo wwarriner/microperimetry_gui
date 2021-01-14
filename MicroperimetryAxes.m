@@ -8,6 +8,11 @@ classdef MicroperimetryAxes < handle
         right (1,1) logical = false
     end
     
+    properties (Constant)
+        DEG_UNITS = "degrees"
+        MM_UNITS = "mm"
+    end
+    
     methods
         function obj = MicroperimetryAxes(parent, position)
             m = axes(parent);
@@ -42,10 +47,22 @@ classdef MicroperimetryAxes < handle
             obj.scatter_h = s;
         end
         
+        function apply(obj, units, applicator)
+            %{
+            aplicator is object with apply() function accepting axes object
+            %}
+            switch units
+                case obj.DEG_UNITS
+                    applicator.apply(obj.deg_ax);
+                case obj.MM_UNITS
+                    applicator.apply(obj.mm_ax);
+                otherwise
+                    assert(false);
+            end
+        end
+        
         function build(obj)
             obj.build_axes(obj.MM_UNITS);
-            grid = EtdrsGrid();
-            grid.apply(obj.mm_ax);
             obj.build_axes(obj.DEG_UNITS);
         end
         
@@ -98,9 +115,6 @@ classdef MicroperimetryAxes < handle
         X = "X"
         Y = "Y"
         
-        DEG_UNITS = "degrees"
-        MM_UNITS = "mm"
-        
         DEG_LIM = 15;
         DEG_STEP = 5;
         MM_PER_DEG = 0.288;
@@ -118,7 +132,7 @@ classdef MicroperimetryAxes < handle
             for i = 1 : v_count
                 th = text(obj.deg_ax, x(i), y(i), obj.to_string(v(i)));
                 th.VerticalAlignment = "top";
-                th.HorizontalAlignment = "left";
+                th.HorizontalAlignment = "center";
                 th.Interpreter = "latex";
                 obj.text_h(i) = th;
             end

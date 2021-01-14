@@ -22,6 +22,7 @@ classdef MicroperimetryAxesArray < handle
         
         function build(obj)
             obj.compute_padding(obj.parent);
+            grid = EtdrsGrid();
             for row = 1 : obj.row_count
                 for col = 1 : obj.col_count
                     % flip row, pos from bottom
@@ -34,9 +35,16 @@ classdef MicroperimetryAxesArray < handle
                     if col == 1; ax.left = true; end
                     if col == obj.col_count; ax.right = true; end
                     ax.build();
+                    ax.apply(ax.MM_UNITS, grid);
                     obj.handles{row, col} = ax;
                 end
             end
+            
+            compass = CompassRose();
+            compass.position = [3.2, -3.2]; % mm
+            compass.label_nudge = 0.25;
+            h = obj.handles{obj.row_count, obj.col_count}; % bottom-right
+            h.apply(h.MM_UNITS, compass)
         end
         
         function update(obj)
