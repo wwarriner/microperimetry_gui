@@ -1,5 +1,7 @@
 classdef MicroperimetryAxesArray < handle
     properties
+        patient_class (1,1) string = Definitions.NORMAL
+        
         row_titles (1,2) string = [init_cap(Definitions.MESOPIC) init_cap(Definitions.SCOTOPIC)]
         col_titles (1,3) string = ["Case" "Group Means" "Z-Scores"]
         axis_size (1,2) double = [320, 320]
@@ -26,16 +28,19 @@ classdef MicroperimetryAxesArray < handle
             for row = 1 : obj.row_count
                 for col = 1 : obj.col_count
                     % flip row, pos from bottom
-                    position = obj.get_position(col, obj.row_count - row + 1);
+                    position = obj.compute_position(col, obj.row_count - row + 1);
                     ax = MicroperimetryAxes(obj.parent, position);
-                    ax.x_title = obj.col_titles(col);
+                    ax.x_title = obj.build_x_title(col);
                     ax.y_title = obj.row_titles(row);
                     if row == 1; ax.top = true; end
                     if row == obj.row_count; ax.bottom = true; end
                     if col == 1; ax.left = true; end
                     if col == obj.col_count; ax.right = true; end
+                    ax.data_range = obj.DATA_RANGES{col};
+                    cmap_fn = obj.COLORMAP_FNS{col};
+                    ax.cmap = cmap_fn();
                     ax.build();
-                    ax.apply(ax.MM_UNITS, grid);
+                    ax.apply_to_axes(ax.MM_UNITS, grid);
                     obj.handles{row, col} = ax;
                 end
             end
@@ -44,23 +49,45 @@ classdef MicroperimetryAxesArray < handle
             compass.position = [3.2, -3.2]; % mm
             compass.label_nudge = 0.25;
             h = obj.handles{obj.row_count, obj.col_count}; % bottom-right
-            h.apply(h.MM_UNITS, compass)
+            h.apply_to_axes(h.MM_UNITS, compass)
             
-            cbh = Colorbar();
-            cbh.cticks = 0 : 4 : 28;
-            cbh.label = "mean log sensitivity, dB";
-            cbh.apply(obj.parent);
-            obj.cbar = cbh;
+            sensitivity_cbh = Colorbar();
+            sensitivity_cbh.location = "west";
+            sensitivity_cbh.cticks = Definitions.COLOR_TICKS;
+            sensitivity_cbh.label = "mean log sensitivity, dB";
+            sensitivity_cmap = obj.COLORMAP_FNS{1};
+            sensitivity_cbh.cmap = sensitivity_cmap();
+            sensitivity_cbh.apply(obj.parent);
+            obj.sensitivity_cbar = sensitivity_cbh;
+            
+            z_score_cbh = Colorbar();
+            z_score_cbh.location = "east";
+            z_score_cbh.cticks = Definitions.Z_SCORE_TICKS;
+            z_score_cbh.label = "z-score";
+            z_score_cmap = obj.COLORMAP_FNS{obj.col_count};
+            z_score_cbh.cmap = z_score_cmap();
+            z_score_cbh.apply(obj.parent);
+            obj.zscore_cbar = z_score_cbh;
         end
         
         function update(obj)
+            for row = 1 : obj.row_count
+                for col = 1 : obj.col_count
+                    h = obj.handles{row, col};
+                    h.x_title = obj.build_x_title(col);
+                    h.update_axes_titles();
+                end
+            end
             if obj.data.count == 0
                 return;
             end
             for row = 1 : obj.row_count
                 for col = 1 : obj.col_count
-                    value_name = obj.data.value_names(1); % TODO
-                    values = obj.data.get_values(obj.VISION_TYPE{row}, value_name);
+                    value_name = obj.DATA_TYPE(col);
+                    if obj.DATA_TYPE_APPEND(col)
+                        value_name = strjoin([value_name, obj.patient_class], "_");
+                    end
+                    values = obj.data.get_values(obj.VISION_TYPE(row), value_name);
                     h = obj.handles{row, col};
                     h.set_data(values.x, values.y, values.v, obj.point_size);
                 end
@@ -104,7 +131,8 @@ classdef MicroperimetryAxesArray < handle
     properties (Access = private)
         data MicroperimetryData
         parent
-        cbar Colorbar
+        sensitivity_cbar Colorbar
+        zscore_cbar Colorbar
         row_labels (:,1)
         col_labels (:,1)
         handles (:,:) cell
@@ -114,22 +142,34 @@ classdef MicroperimetryAxesArray < handle
     
     properties (Access = private, Constant)
         VISION_TYPE (1,2) string = [Definitions.MESOPIC, Definitions.SCOTOPIC]
-        COLORBAR_PADDING (1,2) double = [40 0]
+        DATA_TYPE (1,3) string = [Definitions.SENSITIVITY, Definitions.MEANS, Definitions.Z_SCORE]
+        DATA_TYPE_APPEND (1,3) logical = [false true true]
+        DATA_RANGES (1,3) cell = {Definitions.COLOR_DATA_RANGE, Definitions.COLOR_DATA_RANGE, Definitions.Z_SCORE_DATA_RANGE}
+        COLORMAP_FNS (1,3) cell = {flipud(lajolla), flipud(lajolla), broc}
+        COLORBAR_PADDING (1,2) double = [70 0]
     end
     
     methods (Access = private)
+        function title = build_x_title(obj, col)
+            title = obj.col_titles(col);
+            if obj.DATA_TYPE_APPEND(col)
+                title = strjoin([title, init_cap(obj.patient_class)], ", ");
+            end
+        end
+        
         function compute_padding(obj, parent)
             full = parent.Position(3:4);
             counts = [obj.col_count, obj.row_count];
-            pad = full - (counts - 1) .* obj.in_padding - obj.COLORBAR_PADDING;
+            pad = full - (counts - 1) .* obj.in_padding - 2 .* obj.COLORBAR_PADDING;
             pad = pad - counts .* obj.axis_size;
             assert(all(0 < pad));
             obj.pre_pad = round(0.5 * pad);
             obj.post_pad = pad - obj.pre_pad;
         end
         
-        function pos = get_position(obj, col, row)
-            x = obj.pre_pad(1) + (col - 1) * (obj.axis_size(1) + obj.in_padding(1));
+        function pos = compute_position(obj, col, row)
+            x = obj.pre_pad(1) + (col - 1) * (obj.axis_size(1) + obj.in_padding(1)) ...
+                + obj.COLORBAR_PADDING(1);
             y = obj.post_pad(2) + (row - 1) * (obj.axis_size(2) + obj.in_padding(2));
             w = obj.axis_size(1);
             h = obj.axis_size(2);

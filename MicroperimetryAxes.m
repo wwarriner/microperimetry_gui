@@ -6,6 +6,8 @@ classdef MicroperimetryAxes < handle
         bottom (1,1) logical = false
         left (1,1) logical = false
         right (1,1) logical = false
+        data_range (1,2) double {mustBeReal,mustBeFinite} = [0, 1]
+        cmap (:,3) double {mustBeReal,mustBeFinite} = parula
     end
     
     properties (Constant)
@@ -47,7 +49,7 @@ classdef MicroperimetryAxes < handle
             obj.scatter_h = s;
         end
         
-        function apply(obj, units, applicator)
+        function apply_to_axes(obj, units, applicator)
             %{
             aplicator is object with apply() function accepting axes object
             %}
@@ -64,6 +66,12 @@ classdef MicroperimetryAxes < handle
         function build(obj)
             obj.build_axes(obj.MM_UNITS);
             obj.build_axes(obj.DEG_UNITS);
+        end
+        
+        function update_axes_titles(obj)
+            for units = [obj.DEG_UNITS obj.MM_UNITS]
+                obj.update_axes_labels(units);
+            end
         end
         
         function set_data(obj, x, y, v, point_size)
@@ -84,7 +92,10 @@ classdef MicroperimetryAxes < handle
             obj.update_labels();
             
             for i = 1 : numel(obj.scatter_h.CData)
-                obj.text_h(i).Position(1:2) = [x(i) y(i)];
+                obj.text_h(i).Position(1:2) = [...
+                    x(i) + tanh(x(i)) * 0.5 ... % spreads out points near middle
+                    y(i) - 0.4 ... % moves text out of scatter circles
+                    ];
             end
         end
         
@@ -145,6 +156,22 @@ classdef MicroperimetryAxes < handle
             end
         end
         
+        function update_axes_labels(obj, units)
+            ax = obj.get_axes(units);
+            is_top = obj.top && units == obj.MM_UNITS;
+            if  is_top || (obj.bottom && units == obj.DEG_UNITS)
+                ax.XLabel.String = obj.build_label(obj.X, units, is_top);
+                ax.XLabel.Interpreter = "latex";
+                ax.XTickLabel = obj.build_tick_label(units);
+            end
+            is_left = obj.left && units == obj.DEG_UNITS;
+            if  is_left || (obj.right && units == obj.MM_UNITS)
+                ax.YLabel.String = obj.build_label(obj.Y, units, is_left);
+                ax.YLabel.Interpreter = "latex";
+                ax.YTickLabel = obj.build_tick_label(units);
+            end
+        end
+        
         function build_axes(obj, units)
             ax = obj.get_axes(units);
             
@@ -158,18 +185,11 @@ classdef MicroperimetryAxes < handle
             
             ax.XTickLabel = [];
             ax.YTickLabel = [];
-            is_top = obj.top && units == obj.MM_UNITS;
-            if  is_top || (obj.bottom && units == obj.DEG_UNITS)
-                ax.XLabel.String = obj.build_label(obj.X, units, is_top);
-                ax.XLabel.Interpreter = "latex";
-                ax.XTickLabel = obj.build_tick_label(units);
-            end
-            is_left = obj.left && units == obj.DEG_UNITS;
-            if  is_left || (obj.right && units == obj.MM_UNITS)
-                ax.YLabel.String = obj.build_label(obj.Y, units, is_left);
-                ax.YLabel.Interpreter = "latex";
-                ax.YTickLabel = obj.build_tick_label(units);
-            end
+            
+            caxis(ax, obj.data_range);
+            colormap(ax, obj.cmap);
+            
+            obj.update_axes_labels(units);
         end
         
         function ax = get_axes(obj, units)

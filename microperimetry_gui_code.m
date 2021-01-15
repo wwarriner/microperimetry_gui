@@ -11,6 +11,10 @@ classdef microperimetry_gui < matlab.apps.AppBase
         DisplayValuesSwitchLabel  matlab.ui.control.Label
         DisplayValuesSwitch       matlab.ui.control.Switch
         SaveFigureAsButton        matlab.ui.control.Button
+        PatientClassButtonGroup   matlab.ui.container.ButtonGroup
+        NormalButton              matlab.ui.control.ToggleButton
+        EarlyButton               matlab.ui.control.ToggleButton
+        IntermediateButton        matlab.ui.control.ToggleButton
         DisplayPanel              matlab.ui.container.Panel
     end
 
@@ -36,6 +40,10 @@ classdef microperimetry_gui < matlab.apps.AppBase
             
             app.ODButton.Tag = MicroperimetryData.OD_CHIRALITY;
             app.OSButton.Tag = MicroperimetryData.OS_CHIRALITY;
+            
+            app.NormalButton.Tag = Definitions.NORMAL;
+            app.EarlyButton.Tag = Definitions.EARLY;
+            app.IntermediateButton.Tag = Definitions.INTERMEDIATE;
             
             app.data = d;
             app.axes = ax;
@@ -114,6 +122,13 @@ classdef microperimetry_gui < matlab.apps.AppBase
                 uialert(app.UIFigure, e.message, "Error saving figure");
             end
         end
+
+        % Selection changed function: PatientClassButtonGroup
+        function PatientClassButtonGroupSelectionChanged(app, event)
+            selectedButton = app.PatientClassButtonGroup.SelectedObject;
+            app.axes.patient_class = selectedButton.Tag;
+            app.axes.update();
+        end
     end
 
     % Component initialization
@@ -125,7 +140,7 @@ classdef microperimetry_gui < matlab.apps.AppBase
             % Create UIFigure and hide until all components are created
             app.UIFigure = uifigure('Visible', 'off');
             app.UIFigure.AutoResizeChildren = 'off';
-            app.UIFigure.Position = [100 100 1320 840];
+            app.UIFigure.Position = [100 100 1420 840];
             app.UIFigure.Name = 'MATLAB App';
             app.UIFigure.Resize = 'off';
 
@@ -142,20 +157,20 @@ classdef microperimetry_gui < matlab.apps.AppBase
             app.EyeSideButtonGroup.SelectionChangedFcn = createCallbackFcn(app, @EyeSideButtonGroupSelectionChanged, true);
             app.EyeSideButtonGroup.Title = 'Eye Side';
             app.EyeSideButtonGroup.FontSize = 14;
-            app.EyeSideButtonGroup.Position = [11 668 118 90];
+            app.EyeSideButtonGroup.Position = [11 678 118 80];
 
             % Create ODButton
             app.ODButton = uitogglebutton(app.EyeSideButtonGroup);
             app.ODButton.Text = 'OD';
             app.ODButton.FontSize = 14;
-            app.ODButton.Position = [11 11 49 49];
+            app.ODButton.Position = [11 8 49 40];
             app.ODButton.Value = true;
 
             % Create OSButton
             app.OSButton = uitogglebutton(app.EyeSideButtonGroup);
             app.OSButton.Text = 'OS';
             app.OSButton.FontSize = 14;
-            app.OSButton.Position = [60 11 49 49];
+            app.OSButton.Position = [60 8 49 40];
 
             % Create LoadDataButton
             app.LoadDataButton = uibutton(app.OptionsPanel, 'push');
@@ -168,14 +183,14 @@ classdef microperimetry_gui < matlab.apps.AppBase
             app.DisplayValuesSwitchLabel = uilabel(app.OptionsPanel);
             app.DisplayValuesSwitchLabel.HorizontalAlignment = 'center';
             app.DisplayValuesSwitchLabel.FontSize = 14;
-            app.DisplayValuesSwitchLabel.Position = [20.5 634 97 22];
+            app.DisplayValuesSwitchLabel.Position = [18 466 97 22];
             app.DisplayValuesSwitchLabel.Text = 'Display Values';
 
             % Create DisplayValuesSwitch
             app.DisplayValuesSwitch = uiswitch(app.OptionsPanel, 'slider');
             app.DisplayValuesSwitch.ValueChangedFcn = createCallbackFcn(app, @DisplayValuesSwitchValueChanged, true);
             app.DisplayValuesSwitch.FontSize = 14;
-            app.DisplayValuesSwitch.Position = [38 599 62 27];
+            app.DisplayValuesSwitch.Position = [35 430 64 28];
             app.DisplayValuesSwitch.Value = 'On';
 
             % Create SaveFigureAsButton
@@ -185,12 +200,39 @@ classdef microperimetry_gui < matlab.apps.AppBase
             app.SaveFigureAsButton.Position = [11 8 118 40];
             app.SaveFigureAsButton.Text = 'Save figure...';
 
+            % Create PatientClassButtonGroup
+            app.PatientClassButtonGroup = uibuttongroup(app.OptionsPanel);
+            app.PatientClassButtonGroup.AutoResizeChildren = 'off';
+            app.PatientClassButtonGroup.SelectionChangedFcn = createCallbackFcn(app, @PatientClassButtonGroupSelectionChanged, true);
+            app.PatientClassButtonGroup.Title = 'Patient Class';
+            app.PatientClassButtonGroup.FontSize = 14;
+            app.PatientClassButtonGroup.Position = [11 498 118 170];
+
+            % Create NormalButton
+            app.NormalButton = uitogglebutton(app.PatientClassButtonGroup);
+            app.NormalButton.Text = 'Normal';
+            app.NormalButton.FontSize = 14;
+            app.NormalButton.Position = [11 98 100 40];
+            app.NormalButton.Value = true;
+
+            % Create EarlyButton
+            app.EarlyButton = uitogglebutton(app.PatientClassButtonGroup);
+            app.EarlyButton.Text = 'Early';
+            app.EarlyButton.FontSize = 14;
+            app.EarlyButton.Position = [11 58 100 40];
+
+            % Create IntermediateButton
+            app.IntermediateButton = uitogglebutton(app.PatientClassButtonGroup);
+            app.IntermediateButton.Text = 'Intermediate';
+            app.IntermediateButton.FontSize = 14;
+            app.IntermediateButton.Position = [11 18 100 40];
+
             % Create DisplayPanel
             app.DisplayPanel = uipanel(app.UIFigure);
             app.DisplayPanel.AutoResizeChildren = 'off';
             app.DisplayPanel.Title = 'Display';
             app.DisplayPanel.FontSize = 14;
-            app.DisplayPanel.Position = [141 1 1180 840];
+            app.DisplayPanel.Position = [141 1 1280 840];
 
             % Show the figure after all components are created
             app.UIFigure.Visible = 'on';
