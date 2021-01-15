@@ -45,6 +45,12 @@ classdef MicroperimetryAxesArray < handle
             compass.label_nudge = 0.25;
             h = obj.handles{obj.row_count, obj.col_count}; % bottom-right
             h.apply(h.MM_UNITS, compass)
+            
+            cbh = Colorbar();
+            cbh.cticks = 0 : 4 : 28;
+            cbh.label = "mean log sensitivity, dB";
+            cbh.apply(obj.parent);
+            obj.cbar = cbh;
         end
         
         function update(obj)
@@ -98,6 +104,7 @@ classdef MicroperimetryAxesArray < handle
     properties (Access = private)
         data MicroperimetryData
         parent
+        cbar Colorbar
         row_labels (:,1)
         col_labels (:,1)
         handles (:,:) cell
@@ -107,13 +114,14 @@ classdef MicroperimetryAxesArray < handle
     
     properties (Access = private, Constant)
         VISION_TYPE (1,2) string = [Definitions.MESOPIC, Definitions.SCOTOPIC]
+        COLORBAR_PADDING (1,2) double = [40 0]
     end
     
     methods (Access = private)
         function compute_padding(obj, parent)
             full = parent.Position(3:4);
             counts = [obj.col_count, obj.row_count];
-            pad = full - (counts - 1) .* obj.in_padding;
+            pad = full - (counts - 1) .* obj.in_padding - obj.COLORBAR_PADDING;
             pad = pad - counts .* obj.axis_size;
             assert(all(0 < pad));
             obj.pre_pad = round(0.5 * pad);

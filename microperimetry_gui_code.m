@@ -125,7 +125,7 @@ classdef microperimetry_gui < matlab.apps.AppBase
             % Create UIFigure and hide until all components are created
             app.UIFigure = uifigure('Visible', 'off');
             app.UIFigure.AutoResizeChildren = 'off';
-            app.UIFigure.Position = [100 100 1280 840];
+            app.UIFigure.Position = [100 100 1320 840];
             app.UIFigure.Name = 'MATLAB App';
             app.UIFigure.Resize = 'off';
 
@@ -190,7 +190,7 @@ classdef microperimetry_gui < matlab.apps.AppBase
             app.DisplayPanel.AutoResizeChildren = 'off';
             app.DisplayPanel.Title = 'Display';
             app.DisplayPanel.FontSize = 14;
-            app.DisplayPanel.Position = [141 1 1140 840];
+            app.DisplayPanel.Position = [141 1 1180 840];
 
             % Show the figure after all components are created
             app.UIFigure.Visible = 'on';
