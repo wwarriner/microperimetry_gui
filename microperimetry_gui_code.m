@@ -30,6 +30,8 @@ classdef microperimetry_gui < matlab.apps.AppBase
 
         % Code that executes after component creation
         function startupFcn(app)
+            addpath(genpath("lib"));
+            
             c = Coordinates("coordinates17.csv");
             d = MicroperimetryData(c);
             
