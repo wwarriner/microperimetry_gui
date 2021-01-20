@@ -1,5 +1,8 @@
 classdef Definitions
     properties (Constant)
+        OD_CHIRALITY = "od";
+        OS_CHIRALITY = "os";
+        
         MESOPIC = "mesopic"
         SCOTOPIC = "scotopic"
         

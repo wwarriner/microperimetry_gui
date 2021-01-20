@@ -1,5 +1,7 @@
 classdef EtdrsGrid < handle
     properties
+        chirality (1,1) string = Definitions.OD_CHIRALITY
+        
         step_size (1,1) uint64 {mustBePositive} = 1000
         center (1,2) double {mustBeReal,mustBeFinite} = [0 0]
         scale (1,1) double {mustBeReal,mustBeFinite,mustBePositive} = 1.0
@@ -22,14 +24,30 @@ classdef EtdrsGrid < handle
                 obj.draw_radial_line(axh, angle, radii);
             end
             
-            ph = obj.draw_circle(axh, obj.OPTIC_DISK_CENTER, obj.OPTIC_DISK_RADIUS, true);
+            % todo should shift by obj.center
+            optic_disk_center = obj.compute_optic_disk_center();
+            ph = obj.draw_circle(axh, optic_disk_center, obj.OPTIC_DISK_RADIUS, true);
             ph.EdgeColor = obj.OPTIC_DISK_EDGE_GRAY;
             ph.FaceColor = obj.OPTIC_DISK_FACE_GRAY;
             
             if ~is_held
                 hold(axh, "off");
             end
+            
+            obj.optic_disk = ph;
+            obj.update();
         end
+        
+        function update(obj)
+            c = obj.compute_optic_disk_center();
+            xy = obj.compute_circle_points(c, obj.OPTIC_DISK_RADIUS);
+            obj.optic_disk.XData = xy(:, 1);
+            obj.optic_disk.YData = xy(:, 2);
+        end
+    end
+    
+    properties (Access = private)
+        optic_disk
     end
     
     properties (Access = private, Constant)
@@ -41,7 +59,7 @@ classdef EtdrsGrid < handle
         EDGE_GRAY = [0.5 0.5 0.5];
         FACE_GRAY = [0.95 0.95 0.95];
         
-        OPTIC_DISK_CENTER = [-4.32 0.66];
+        OPTIC_DISK_CENTER_OFFSET = [-4.32 0.66];
         OPTIC_DISK_RADIUS = 0.92;
         
         OPTIC_DISK_EDGE_GRAY = [0.25 0.25 0.25];
@@ -54,15 +72,33 @@ classdef EtdrsGrid < handle
                 filled = false;
             end
             
-            t = linspace(-pi, pi, obj.step_size);
-            x = obj.scale_radius(radius .* cos(t)) + center(1);
-            y = obj.scale_radius(radius .* sin(t)) + center(2);
-            ph = patch(axh, x, y, obj.face_color);
+            xy = obj.compute_circle_points(center, radius);
+            ph = patch(axh, xy(:, 1), xy(:, 2), obj.face_color);
             ph.EdgeColor = obj.edge_color;
             ph.FaceColor = obj.face_color;
             if ~filled
                 ph.FaceAlpha = 0.0;
             end
+        end
+        
+        function xy = compute_circle_points(obj, center, radius)
+            t = linspace(-pi, pi, obj.step_size).';
+            x = obj.scale_radius(radius .* cos(t)) + center(1);
+            y = obj.scale_radius(radius .* sin(t)) + center(2);
+            xy = [x y];
+        end
+        
+        function xy = compute_optic_disk_center(obj)
+            c = obj.OPTIC_DISK_CENTER_OFFSET;
+            switch obj.chirality
+                case Definitions.OD_CHIRALITY
+                    % noop
+                case Definitions.OS_CHIRALITY
+                    c(1) = -c(1);
+                otherwise
+                    assert(false)
+            end
+            xy = obj.center + c;
         end
         
         function ph = draw_radial_line(obj, axh, angle, radii)

@@ -1,6 +1,6 @@
 classdef MicroperimetryData < handle
     properties
-        chirality (1,1) string = MicroperimetryData.OD_CHIRALITY
+        chirality (1,1) string = Definitions.OD_CHIRALITY
     end
     
     properties (SetAccess = private)
@@ -11,11 +11,6 @@ classdef MicroperimetryData < handle
     
     properties (SetAccess = private, Dependent)
         count (1,1) double
-    end
-    
-    properties (Constant)
-        OD_CHIRALITY = "od";
-        OS_CHIRALITY = "os";
     end
     
     methods
@@ -80,9 +75,9 @@ classdef MicroperimetryData < handle
         
         function value = get_x(obj, vision_type)
             switch obj.chirality
-                case obj.OD_CHIRALITY
+                case Definitions.OD_CHIRALITY
                     value = obj.coordinates.get_x(vision_type);
-                case obj.OS_CHIRALITY
+                case Definitions.OS_CHIRALITY
                     value = -obj.coordinates.get_x(vision_type);
                 otherwise
                     assert(false);

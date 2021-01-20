@@ -24,7 +24,7 @@ classdef MicroperimetryAxesArray < handle
         
         function build(obj)
             obj.compute_padding(obj.parent);
-            grid = EtdrsGrid();
+            gs = {};
             for row = 1 : obj.row_count
                 for col = 1 : obj.col_count
                     % flip row, pos from bottom
@@ -40,16 +40,25 @@ classdef MicroperimetryAxesArray < handle
                     cmap_fn = obj.COLORMAP_FNS{col};
                     ax.cmap = cmap_fn();
                     ax.build();
-                    ax.apply_to_axes(ax.MM_UNITS, grid);
+                    
+                    
+                    g = EtdrsGrid();
+                    g.chirality = obj.data.chirality;
+                    ax.apply_to_axes(ax.MM_UNITS, g);
+                    gs{row, col} = g;
+                    
                     obj.handles{row, col} = ax;
                 end
             end
+            obj.grids = gs;
             
-            compass = CompassRose();
-            compass.position = [3.2, -3.2]; % mm
-            compass.label_nudge = 0.25;
+            c = CompassRose();
+            c.chirality = obj.data.chirality;
+            c.position = [3.2, -3.2]; % mm
+            c.label_nudge = 0.25;
             h = obj.handles{obj.row_count, obj.col_count}; % bottom-right
-            h.apply_to_axes(h.MM_UNITS, compass)
+            h.apply_to_axes(h.MM_UNITS, c)
+            obj.compass = c;
             
             sensitivity_cbh = Colorbar();
             sensitivity_cbh.location = "west";
@@ -107,6 +116,14 @@ classdef MicroperimetryAxesArray < handle
         end
         
         function update_chirality(obj)
+            obj.compass.chirality = obj.data.chirality;
+            obj.compass.update();
+            for row = 1 : obj.row_count
+                for col = 1 : obj.col_count
+                    obj.grids{row, col}.chirality = obj.data.chirality;
+                    obj.grids{row, col}.update();     
+                end
+            end
             if obj.data.count == 0
                 return;
             end
@@ -117,6 +134,7 @@ classdef MicroperimetryAxesArray < handle
                     h.set_label_position(obj.data.get_x(type), obj.data.get_y(type));
                 end
             end
+            
         end
         
         function value = get.row_count(obj)
@@ -131,6 +149,8 @@ classdef MicroperimetryAxesArray < handle
     properties (Access = private)
         data MicroperimetryData
         parent
+        grids cell
+        compass CompassRose
         sensitivity_cbar Colorbar
         zscore_cbar Colorbar
         row_labels (:,1)

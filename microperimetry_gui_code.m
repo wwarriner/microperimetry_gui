@@ -38,8 +38,8 @@ classdef microperimetry_gui < matlab.apps.AppBase
             ax.label_visibility_state = string(app.DisplayValuesSwitch.Value);
             ax.update();
             
-            app.ODButton.Tag = MicroperimetryData.OD_CHIRALITY;
-            app.OSButton.Tag = MicroperimetryData.OS_CHIRALITY;
+            app.ODButton.Tag = Definitions.OD_CHIRALITY;
+            app.OSButton.Tag = Definitions.OS_CHIRALITY;
             
             app.NormalButton.Tag = Definitions.NORMAL;
             app.EarlyButton.Tag = Definitions.EARLY;
