@@ -101,7 +101,7 @@ classdef microperimetry_gui < matlab.apps.AppBase
             fh.Position = app.DisplayPanel.Position();
             ax = MicroperimetryAxesArray(fh, app.data);
             ax.row_titles = app.axes.row_titles;
-            ax.col_titles = app.axes.col_titles;
+            ax.layout = app.axes.layout;
             ax.build();
             ax.label_visibility_state = string(app.DisplayValuesSwitch.Value);
             ax.update();

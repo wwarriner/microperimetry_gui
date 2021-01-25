@@ -2,8 +2,9 @@ classdef MicroperimetryAxesArray < handle
     properties
         patient_class (1,1) string = Definitions.NORMAL
         
+        layout (1,1) string = MicroperimetryAxesArray.INDIVIDUAL_LAYOUT
+        
         row_titles (1,2) string = [init_cap(Definitions.MESOPIC) init_cap(Definitions.SCOTOPIC)]
-        col_titles (1,3) string = ["Case" "Group Means" "Z-Scores"]
         axis_size (1,2) double = [320, 320]
         in_padding (1,2) double = [20, 20]
         point_size (1,1) double = 60
@@ -11,9 +12,14 @@ classdef MicroperimetryAxesArray < handle
         label_visibility_state (1,1) string
     end
     
-    properties (Dependent)
+    properties (Dependent, SetAccess = private)
         row_count
         col_count
+    end
+    
+    properties (Constant)
+        INDIVIDUAL_LAYOUT = "individual"
+        GROUP_MEANS_LAYOUT = "group_means"
     end
     
     methods
@@ -24,30 +30,27 @@ classdef MicroperimetryAxesArray < handle
         
         function build(obj)
             obj.compute_padding(obj.parent);
-            gs = {};
+            gs = cell(obj.row_count, obj.col_count);
             for row = 1 : obj.row_count
                 for col = 1 : obj.col_count
                     % flip row, pos from bottom
                     position = obj.compute_position(col, obj.row_count - row + 1);
-                    ax = MicroperimetryAxes(obj.parent, position);
-                    ax.x_title = obj.build_x_title(col);
-                    ax.y_title = obj.row_titles(row);
-                    if row == 1; ax.top = true; end
-                    if row == obj.row_count; ax.bottom = true; end
-                    if col == 1; ax.left = true; end
-                    if col == obj.col_count; ax.right = true; end
-                    ax.data_range = obj.DATA_RANGES{col};
-                    cmap_fn = obj.COLORMAP_FNS{col};
-                    ax.cmap = cmap_fn();
+                    ax = Axes(obj.parent, position);
+                    ax.set_style(obj.col_styles(col));
+                    ax.location(Axes.TOP_LOCATION) = row == 1;
+                    ax.location(Axes.BOTTOM_LOCATION) = row == obj.row_count;
+                    ax.location(Axes.LEFT_LOCATION) = col == 1;
+                    ax.location(Axes.RIGHT_LOCATION) = col == obj.col_count;
+                    ax.x_title_label = sprintf("r%dc%d", row, col);
+                    ax.y_title_label = obj.row_titles(row);
                     ax.build();
-                    
                     
                     g = EtdrsGrid();
                     g.chirality = obj.data.chirality;
-                    ax.apply_to_axes(ax.MM_UNITS, g);
+                    ax.apply_to_axes(ax.MM_AXES_UNITS, g);
                     gs{row, col} = g;
                     
-                    obj.handles{row, col} = ax;
+                    obj.axes_handles{row, col} = ax;
                 end
             end
             obj.grids = gs;
@@ -56,13 +59,13 @@ classdef MicroperimetryAxesArray < handle
             c.chirality = obj.data.chirality;
             c.position = [3.2, -3.2]; % mm
             c.label_nudge = 0.25;
-            h = obj.handles{obj.row_count, obj.col_count}; % bottom-right
-            h.apply_to_axes(h.MM_UNITS, c)
+            h = obj.axes_handles{obj.row_count, obj.col_count}; % bottom-right
+            h.apply_to_axes(h.MM_AXES_UNITS, c)
             obj.compass = c;
             
             sensitivity_cbh = Colorbar();
             sensitivity_cbh.location = "west";
-            sensitivity_cbh.cticks = Definitions.COLOR_TICKS;
+            sensitivity_cbh.cticks = Definitions.SENSITIVITY_TICKS;
             sensitivity_cbh.label = "mean log sensitivity, dB";
             sensitivity_cmap = obj.COLORMAP_FNS{1};
             sensitivity_cbh.cmap = sensitivity_cmap();
@@ -82,9 +85,9 @@ classdef MicroperimetryAxesArray < handle
         function update(obj)
             for row = 1 : obj.row_count
                 for col = 1 : obj.col_count
-                    h = obj.handles{row, col};
-                    h.x_title = obj.build_x_title(col);
-                    h.update_axes_titles();
+                    h = obj.axes_handles{row, col};
+                    h.x_title_label = sprintf("r%dc%d", row, col);
+                    h.update();
                 end
             end
             if obj.data.count == 0
@@ -97,7 +100,7 @@ classdef MicroperimetryAxesArray < handle
                         value_name = strjoin([value_name, obj.patient_class], "_");
                     end
                     values = obj.data.get_values(obj.VISION_TYPE(row), value_name);
-                    h = obj.handles{row, col};
+                    h = obj.axes_handles{row, col};
                     h.set_data(values.x, values.y, values.v, obj.point_size);
                 end
             end
@@ -109,8 +112,8 @@ classdef MicroperimetryAxesArray < handle
             if obj.data.count == 0
                 return;
             end
-            for i = 1 : numel(obj.handles)
-                h = obj.handles{i};
+            for i = 1 : numel(obj.axes_handles)
+                h = obj.axes_handles{i};
                 h.set_label_visibility_state(obj.label_visibility_state);
             end
         end
@@ -129,7 +132,7 @@ classdef MicroperimetryAxesArray < handle
             end
             for row = 1 : obj.row_count
                 for col = 1 : obj.col_count
-                    h = obj.handles{row, col};
+                    h = obj.axes_handles{row, col};
                     type = obj.VISION_TYPE{row};
                     h.set_label_position(obj.data.get_x(type), obj.data.get_y(type));
                 end
@@ -142,41 +145,48 @@ classdef MicroperimetryAxesArray < handle
         end
         
         function value = get.col_count(obj)
-            value = numel(obj.col_titles);
+            value = numel(obj.col_styles);
         end
     end
     
     properties (Access = private)
-        data MicroperimetryData
         parent
+        
+        data MicroperimetryData
+        axes_handles (:,:) cell
+        
         grids cell
         compass CompassRose
+        
         sensitivity_cbar Colorbar
         zscore_cbar Colorbar
-        row_labels (:,1)
-        col_labels (:,1)
-        handles (:,:) cell
+        
         pre_pad (:,:)
         post_pad (:,:)
+        
+        col_styles (1,3) string = MicroperimetryAxesArray.INDIVIDUAL_LAYOUT_COL_STYLES
     end
     
     properties (Access = private, Constant)
         VISION_TYPE (1,2) string = [Definitions.MESOPIC, Definitions.SCOTOPIC]
         DATA_TYPE (1,3) string = [Definitions.SENSITIVITY, Definitions.MEANS, Definitions.Z_SCORE]
         DATA_TYPE_APPEND (1,3) logical = [false true true]
-        DATA_RANGES (1,3) cell = {Definitions.COLOR_DATA_RANGE, Definitions.COLOR_DATA_RANGE, Definitions.Z_SCORE_DATA_RANGE}
+        DATA_RANGES (1,3) cell = {Definitions.SENSITIVITY_DATA_RANGE, Definitions.SENSITIVITY_DATA_RANGE, Definitions.Z_SCORE_DATA_RANGE}
         COLORMAP_FNS (1,3) cell = {flipud(lajolla), flipud(lajolla), broc}
         COLORBAR_PADDING (1,2) double = [70 0]
+        
+        INDIVIDUAL_LAYOUT_COL_STYLES = [Axes.INDIVIDUAL_STYLE, Axes.GROUP_MEANS_STYLE, Axes.Z_SCORES_STYLE]
+        GROUP_MEANS_LAYOUT_COL_STYLES = [Axes.GROUP_MEANS_STYLE, Axes.GROUP_MEANS_STYLE, Axes.ZSCORES_STYLE]
+        
+        INDIVIDUAL_LAYOUT_KEYWORDS = [Definitions.INDIVIDUAL, Definitions.GROUP_MEANS, Definitions.Z_SCORES]
+        GROUP_MEANS_LAYOUT_KEYWORDS = [Definitions.GROUP_MEANS, Definitions.GROUP_MEANS, Definitions.Z_SCORES]
+        % filter data on keyword
+        % build combo box for left col
+        % build combo box for mid/right cols
+        % if gm_layout, left col data record index is forbidden in mid/right
     end
     
     methods (Access = private)
-        function title = build_x_title(obj, col)
-            title = obj.col_titles(col);
-            if obj.DATA_TYPE_APPEND(col)
-                title = strjoin([title, init_cap(obj.patient_class)], ", ");
-            end
-        end
-        
         function compute_padding(obj, parent)
             full = parent.Position(3:4);
             counts = [obj.col_count, obj.row_count];
