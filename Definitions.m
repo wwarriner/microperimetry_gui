@@ -3,6 +3,7 @@ classdef Definitions
         OD_CHIRALITY = "od";
         OS_CHIRALITY = "os";
         
+        VISION_TYPE = "vision_type"
         MESOPIC = "mesopic"
         SCOTOPIC = "scotopic"
         
@@ -25,13 +26,22 @@ classdef Definitions
         ECCENTRICITY = "eccentricity"
         SENSITIVITY = "sensitivity"
         
-        INDIVIDUAL = "patient"
+        KEYWORD = "keyword"
+        INDIVIDUAL = "individual"
         GROUP_MEANS = "group_means"
         Z_SCORES = "z_scores"
+        KEYWORDS = [Definitions.INDIVIDUAL, Definitions.GROUP_MEANS, Definitions.Z_SCORES]
+        REQUIRED_KEYWORDS = [Definitions.GROUP_MEANS, Definitions.Z_SCORES]
         
-        NORMAL = "normal"
-        EARLY = "early"
-        INTERMEDIATE = "intermediate"
+        CLASS = "class"
+        LOOKUP_TYPE = "lookup_type";
+        LOOKUP_VALUE = "lookup_value";
+        
+        PATIENT = "patient";
+        CONTROL_CLASS = "control_class";
+        
+        CLASS_DATA_SOURCE = "class";
+        LOOKUP_DATA_SOURCE = "lookup";
     end
 end
 

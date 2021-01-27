@@ -18,13 +18,13 @@ classdef Axes < handle
         
         DEGREES_AXES_UNITS = Definitions.DEGREES_UNITS
         MM_AXES_UNITS = Definitions.MM_UNITS
+        
+        SENSITIVITY_COLORBAR_SIDE = "left"
+        Z_SCORES_COLORBAR_SIDE = "right"
     end
     
     methods
         function obj = Axes(parent, position)
-            obj.set_color_info(obj.LEFT_COLORBAR_SIDE, flipud(lajolla()), Definitions.SENSITIVITY_DATA_RANGE);
-            obj.set_color_info(obj.RIGHT_COLORBAR_SIDE, flipud(broc()), Definitions.Z_SCORE_DATA_RANGE);
-            
             m = axes(parent);
             m.Units = "pixels";
             m.Position = position;
@@ -57,16 +57,46 @@ classdef Axes < handle
             obj.scatter_h = s;
         end
         
-        function set_style(obj, style)
-            LEFT_STYLES = [obj.INDIVIDUAL_STYLE, obj.GROUP_MEANS_STYLE];
-            RIGHT_STYLES = obj.Z_SCORES_STYLE;
+        function set_color_info(obj, side, cmap, range)
+            %{
+            Used to set coloraxis information for synchronization with other
+            axes.
+            %}
+            assert(ismember(side, obj.sides));
             
-            is_left = ismember(style, LEFT_STYLES);
-            is_right = ismember(style, RIGHT_STYLES);
+            assert(isnumeric(cmap));
+            assert(~isempty(cmap));
+            assert(size(cmap, 2) == 3);
+            assert(all(0 <= cmap, "all"));
+            assert(all(cmap <= 1, "all"));
+            
+            assert(isnumeric(range));
+            assert(isvector(range));
+            assert(numel(range) == 2);
+            assert(all(0 < diff(range), "all"));
+            
+            switch side
+                case obj.SENSITIVITY_COLORBAR_SIDE
+                    obj.left_cmap = cmap;
+                    obj.left_crange = range;
+                case obj.Z_SCORES_COLORBAR_SIDE
+                    obj.right_cmap = cmap;
+                    obj.right_crange = range;
+                otherwise
+                    assert(false);
+            end
+        end
+        
+        function set_style(obj, style)
+            SENSITIVITY_STYLES = [obj.INDIVIDUAL_STYLE, obj.GROUP_MEANS_STYLE];
+            Z_SCORES_STYLES = obj.Z_SCORES_STYLE;
+            
+            is_left = ismember(style, SENSITIVITY_STYLES);
+            is_right = ismember(style, Z_SCORES_STYLES);
             if is_left
-                s = obj.LEFT_COLORBAR_SIDE;
+                s = obj.SENSITIVITY_COLORBAR_SIDE;
             elseif is_right
-                s = obj.RIGHT_COLORBAR_SIDE;
+                s = obj.Z_SCORES_COLORBAR_SIDE;
             else
                 assert(false);
             end
@@ -95,7 +125,11 @@ classdef Axes < handle
             end
         end
         
-        function set_data(obj, x, y, v, point_size)
+        function set_data(obj, data, point_size)
+            x = data.x;
+            y = data.y;
+            v = data.v;
+            
             assert(isnumeric(x));
             assert(isvector(x));
             assert(isreal(x));
@@ -129,10 +163,10 @@ classdef Axes < handle
         function update_color_info(obj)
             ax = obj.deg_ax;
             switch obj.side
-                case obj.LEFT_COLORBAR_SIDE
+                case obj.SENSITIVITY_COLORBAR_SIDE
                     ax.Colormap = obj.left_cmap;
                     ax.CLim = obj.left_crange;
-                case obj.RIGHT_COLORBAR_SIDE
+                case obj.Z_SCORES_COLORBAR_SIDE
                     ax.Colormap = obj.right_cmap;
                     ax.CLim = obj.right_crange;
                 otherwise
@@ -184,7 +218,7 @@ classdef Axes < handle
         right_crange (1,2) double {mustBeReal,mustBeFinite}
         
         style (1,1) string = Axes.INDIVIDUAL_STYLE
-        side (1,1) string = Axes.LEFT_COLORBAR_SIDE
+        side (1,1) string = Axes.SENSITIVITY_COLORBAR_SIDE
     end
     
     properties (Dependent, Access = private)
@@ -195,9 +229,6 @@ classdef Axes < handle
     end
     
     properties (Constant, Access = private)
-        LEFT_COLORBAR_SIDE = "left"
-        RIGHT_COLORBAR_SIDE = "right"
-        
         X = "X"
         Y = "Y"
         
@@ -226,32 +257,6 @@ classdef Axes < handle
             v = obj.scatter_h.CData;
             for i = 1 : numel(v)
                 obj.text_h(i).String = obj.to_string(v(i));
-            end
-        end
-        
-        function set_color_info(obj, side, cmap, range)
-            assert(ismember(side, obj.sides));
-            
-            assert(isnumeric(cmap));
-            assert(~isempty(cmap));
-            assert(size(cmap, 2) == 3);
-            assert(all(0 <= cmap, "all"));
-            assert(all(cmap <= 1, "all"));
-            
-            assert(isnumeric(range));
-            assert(isvector(range));
-            assert(numel(range) == 2);
-            assert(all(0 < diff(range), "all"));
-            
-            switch side
-                case obj.LEFT_COLORBAR_SIDE
-                    obj.left_cmap = cmap;
-                    obj.left_crange = range;
-                case obj.RIGHT_COLORBAR_SIDE
-                    obj.right_cmap = cmap;
-                    obj.right_crange = range;
-                otherwise
-                    assert(false);
             end
         end
         
@@ -386,7 +391,7 @@ classdef Axes < handle
     
     methods % private accessors
         function value = get.sides(obj)
-            value = [obj.LEFT_COLORBAR_SIDE, obj.RIGHT_COLORBAR_SIDE];
+            value = [obj.SENSITIVITY_COLORBAR_SIDE, obj.Z_SCORES_COLORBAR_SIDE];
         end
         
         function value = get.x_data(obj)

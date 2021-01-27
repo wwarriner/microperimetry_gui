@@ -4,13 +4,12 @@ classdef MicroperimetryData < handle
     end
     
     properties (SetAccess = private)
-        value_names (:,1) string
-        eye (1,1) double
-        id (1,1) double
+        classes (:,1) string
+        individuals (:,1) string
     end
     
     properties (SetAccess = private, Dependent)
-        count (1,1) double
+        ready (1,1) logical
     end
     
     methods
@@ -21,7 +20,20 @@ classdef MicroperimetryData < handle
         function load_csv(obj, csv_file_path)
             % assumes datafile of the form:
             % eye, ppt_id, <labels...>
-            t = readtable(csv_file_path);
+            t = readtable(csv_file_path, "texttype", "string");
+            
+            keywords = unique(t.keyword);
+            assert(all(intersect(keywords, Definitions.REQUIRED_KEYWORDS) == sort(Definitions.REQUIRED_KEYWORDS.')));
+            
+            v = t;
+            v = v(v.keyword == Definitions.INDIVIDUAL, :);
+            individual_names = sort(v.tag);
+            
+            classes_base = t(t.keyword == Definitions.Z_SCORES, :).class;
+            z_score_classes = unique(classes_base);
+            group_means_classes = unique(t(t.keyword == Definitions.GROUP_MEANS, :).class);
+            assert(all(intersect(z_score_classes, group_means_classes) == z_score_classes));
+            class_names = unique(classes_base, "stable");
             
             w = width(t);
             labels = {};
@@ -32,38 +44,93 @@ classdef MicroperimetryData < handle
                 end
             end
             
-            names = string(t.index);
-            name_count = numel(names);
-            meso = nan(name_count, obj.count);
-            scoto = nan(name_count, obj.count);
+            meso = nan(height(t), 1);
             for c = 1 : numel(labels)
                 label = labels{c};
                 value = t{:, label.text};
-                switch label.vision_type
-                    case Definitions.MESOPIC
+                if label.vision_type == Definitions.MESOPIC
                         meso(:, label.index) = value;
-                    case Definitions.SCOTOPIC
-                        scoto(:, label.index) = value;
-                    otherwise
-                        assert(false)
                 end
             end
             
-            obj.value_names = names;
-            obj.eye = t{1, "eye"};
-            obj.id = t{1, "ppt_id"};
+            scoto = nan(height(t), 1);
+            for c = 1 : numel(labels)
+                label = labels{c};
+                value = t{:, label.text};
+                if label.vision_type == Definitions.SCOTOPIC
+                    scoto(:, label.index) = value;
+                end
+            end
+            
+            obj.data = t;
+            obj.individuals = individual_names;
+            obj.classes = class_names;
             obj.mesopic = meso;
             obj.scotopic = scoto;
         end
         
-        function values = get_values(obj, vision_type, value_name)
+        function value = has_individuals(obj)
+            value = ~isempty(obj.individuals);
+        end
+        
+        function values = get_class_values(obj, varargin)
+            %{
+            k-v pairs
+            
+            1) "keyword" - string
+            2) "vision_type" - string
+            3) "lookup_type" - string (individual, group_means)
+            4) "lookup_value" - string
+            
+            NOTE: "class" and "individual" are mutually exclusive
+            %}
+            
+            p = inputParser();
+            p.addParameter(Definitions.KEYWORD, []);
+            p.addParameter(Definitions.VISION_TYPE, []);
+            p.addParameter(Definitions.LOOKUP_TYPE, []);
+            p.addParameter(Definitions.LOOKUP_VALUE, []);
+            p.parse(varargin{:});
+            
+            keyword = p.Results.(Definitions.KEYWORD);
+            vision_type = p.Results.(Definitions.VISION_TYPE);
+            lookup_type = p.Results.(Definitions.LOOKUP_TYPE);
+            lookup_value = p.Results.(Definitions.LOOKUP_VALUE);
+            
+            assert(~isempty(keyword));
+            assert(isstring(keyword));
+            assert(isscalar(keyword));
+            
+            assert(~isempty(vision_type));
+            assert(isstring(vision_type));
+            assert(isscalar(vision_type));
+            
+            assert(~isempty(lookup_type));
+            assert(isstring(lookup_type));
+            assert(isscalar(lookup_type));
+            
+            assert(~isempty(lookup_value));
+            assert(isstring(lookup_value));
+            assert(isscalar(lookup_value));
+            
+            v = obj.data;
+            indices = v.keyword == keyword;
+            if lookup_type == Definitions.GROUP_MEANS
+                indices = indices & v.class == lookup_value;
+            elseif lookup_type == Definitions.INDIVIDUAL
+                indices = indices & v.tag == lookup_value;
+            else
+                assert(false);
+            end
+            assert(sum(indices) == 1);
+            index = find(indices);
+            
             value = [];
-            value_index = obj.to_index(value_name);
             switch vision_type
                 case Definitions.MESOPIC
-                    value = obj.mesopic(value_index, :);
+                    value = obj.mesopic(index, :);
                 case Definitions.SCOTOPIC
-                    value = obj.scotopic(value_index, :);
+                    value = obj.scotopic(index, :);
                 otherwise
                     assert(false);
             end
@@ -87,13 +154,16 @@ classdef MicroperimetryData < handle
         function value = get_y(obj, vision_type)
             value = obj.coordinates.get_y(vision_type);
         end
+    end
         
-        function value = get.count(obj)
-            value = size(obj.mesopic, 2);
+    methods % accessors
+        function value = get.ready(obj)
+            value = (~isempty(obj.classes) || ~isempty(obj.classes));
         end
     end
     
     properties (Access = private)
+        data table
         coordinates Coordinates
         mesopic (:,:) double
         scotopic (:,:) double

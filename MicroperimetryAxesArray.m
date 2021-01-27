@@ -1,6 +1,7 @@
 classdef MicroperimetryAxesArray < handle
     properties
-        patient_class (1,1) string = Definitions.NORMAL
+        patient_class (1,1) string = ""
+        lookup_item (1,1) string = ""
         
         layout (1,1) string = MicroperimetryAxesArray.INDIVIDUAL_LAYOUT
         
@@ -13,19 +14,22 @@ classdef MicroperimetryAxesArray < handle
     end
     
     properties (Dependent, SetAccess = private)
-        row_count
-        col_count
+        allowed_layouts (:,1) string
+        lookup_title (:,1) string
+        lookup_items (:,1) string % left axes, source depends on layout
+        classes (:,1) string % middle and right axes
     end
     
     properties (Constant)
-        INDIVIDUAL_LAYOUT = "individual"
-        GROUP_MEANS_LAYOUT = "group_means"
+        INDIVIDUAL_LAYOUT = Definitions.INDIVIDUAL
+        GROUP_MEANS_LAYOUT = Definitions.GROUP_MEANS
     end
     
     methods
-        function obj = MicroperimetryAxesArray(parent, data)
+        function obj = MicroperimetryAxesArray(parent, data, layout_infos)
             obj.data = data;
             obj.parent = parent;
+            obj.layout_infos = layout_infos;
         end
         
         function build(obj)
@@ -36,13 +40,20 @@ classdef MicroperimetryAxesArray < handle
                     % flip row, pos from bottom
                     position = obj.compute_position(col, obj.row_count - row + 1);
                     ax = Axes(obj.parent, position);
-                    ax.set_style(obj.col_styles(col));
+                    
+                    ax.set_color_info(ax.SENSITIVITY_COLORBAR_SIDE, obj.SENSITIVITY_COLORMAP, Definitions.SENSITIVITY_DATA_RANGE);
+                    ax.set_color_info(ax.Z_SCORES_COLORBAR_SIDE, obj.Z_SCORES_COLORMAP, Definitions.Z_SCORE_DATA_RANGE);
+                    
+                    ax.set_style(obj.layout_info.column_styles(col));
+                    
                     ax.location(Axes.TOP_LOCATION) = row == 1;
                     ax.location(Axes.BOTTOM_LOCATION) = row == obj.row_count;
                     ax.location(Axes.LEFT_LOCATION) = col == 1;
                     ax.location(Axes.RIGHT_LOCATION) = col == obj.col_count;
+                    
                     ax.x_title_label = sprintf("r%dc%d", row, col);
                     ax.y_title_label = obj.row_titles(row);
+                    
                     ax.build();
                     
                     g = EtdrsGrid();
@@ -67,7 +78,7 @@ classdef MicroperimetryAxesArray < handle
             sensitivity_cbh.location = "west";
             sensitivity_cbh.cticks = Definitions.SENSITIVITY_TICKS;
             sensitivity_cbh.label = "mean log sensitivity, dB";
-            sensitivity_cmap = obj.COLORMAP_FNS{1};
+            sensitivity_cmap = obj.SENSITIVITY_COLORMAP;
             sensitivity_cbh.cmap = sensitivity_cmap();
             sensitivity_cbh.apply(obj.parent);
             obj.sensitivity_cbar = sensitivity_cbh;
@@ -76,40 +87,63 @@ classdef MicroperimetryAxesArray < handle
             z_score_cbh.location = "east";
             z_score_cbh.cticks = Definitions.Z_SCORE_TICKS;
             z_score_cbh.label = "z-score";
-            z_score_cmap = obj.COLORMAP_FNS{obj.col_count};
+            z_score_cmap = obj.Z_SCORES_COLORMAP;
             z_score_cbh.cmap = z_score_cmap();
             z_score_cbh.apply(obj.parent);
             obj.zscore_cbar = z_score_cbh;
         end
         
         function update(obj)
+            % could be reduced to a single h.update()
             for row = 1 : obj.row_count
                 for col = 1 : obj.col_count
                     h = obj.axes_handles{row, col};
                     h.x_title_label = sprintf("r%dc%d", row, col);
+                    % TODO generic placeholder instead of above
+                    h.set_style(obj.layout_info.column_styles(col));
+                    % TODO after ready check below, assign actual value
                     h.update();
-                end
-            end
-            if obj.data.count == 0
-                return;
-            end
-            for row = 1 : obj.row_count
-                for col = 1 : obj.col_count
-                    value_name = obj.DATA_TYPE(col);
-                    if obj.DATA_TYPE_APPEND(col)
-                        value_name = strjoin([value_name, obj.patient_class], "_");
-                    end
-                    values = obj.data.get_values(obj.VISION_TYPE(row), value_name);
-                    h = obj.axes_handles{row, col};
-                    h.set_data(values.x, values.y, values.v, obj.point_size);
                 end
             end
             obj.update_label_visibility();
             obj.update_chirality();
+            if ~obj.data.ready
+                return;
+            end
+            for row = 1 : obj.row_count
+                vision_type = obj.VISION_TYPE(row);
+                for col = 1 : obj.col_count
+                    h = obj.axes_handles{row, col};
+                    keyword = obj.layout_info.column_keywords(col);
+                    % the usage of obj.lookup_item should vary by column
+                    % 1 is lookup_item, 2/3 is patient_class
+                    % make more general
+                    data_source = obj.layout_info.column_data_sources(col);
+                    switch data_source
+                        case Definitions.LOOKUP_DATA_SOURCE
+                            class = obj.layout_info.lookup_class;
+                            value = obj.lookup_item;
+                        case Definitions.CLASS_DATA_SOURCE
+                            class = Definitions.GROUP_MEANS;
+                            value = obj.patient_class;
+                        otherwise
+                            assert(false);
+                    end
+                    d = obj.data.get_class_values(...
+                        Definitions.KEYWORD, keyword, ...
+                        Definitions.VISION_TYPE, vision_type, ...
+                        Definitions.LOOKUP_TYPE, class, ...
+                        Definitions.LOOKUP_VALUE, value ...
+                        );
+                    h.set_data(d, obj.point_size);
+                    h.set_label_position(d.x, d.y);
+                    h.update();
+                end
+            end
         end
         
         function update_label_visibility(obj)
-            if obj.data.count == 0
+            if ~obj.data.ready
                 return;
             end
             for i = 1 : numel(obj.axes_handles)
@@ -127,7 +161,7 @@ classdef MicroperimetryAxesArray < handle
                     obj.grids{row, col}.update();     
                 end
             end
-            if obj.data.count == 0
+            if ~obj.data.ready
                 return;
             end
             for row = 1 : obj.row_count
@@ -140,17 +174,36 @@ classdef MicroperimetryAxesArray < handle
             
         end
         
-        function value = get.row_count(obj)
-            value = numel(obj.row_titles);
+        function value = get.allowed_layouts(obj)
+            value = [obj.GROUP_MEANS_LAYOUT];
+            if obj.data.has_individuals()
+                value = [value obj.INDIVIDUAL_LAYOUT];
+            end
         end
         
-        function value = get.col_count(obj)
-            value = numel(obj.col_styles);
+        function value = get.lookup_title(obj)
+            value = obj.layout_info.lookup_title;
+        end
+        
+        function value = get.lookup_items(obj)
+            value = obj.layout_info.lookup_items;
+        end
+        
+        function value = get.classes(obj)
+            value = obj.data.classes;
+            if obj.layout_info.lookup_class == Definitions.GROUP_MEANS
+                value = setdiff(value, obj.lookup_item, "stable");
+            end
+        end
+        
+        function set.layout(obj, value)
+            obj.layout = unpretty_print(value);
         end
     end
     
     properties (Access = private)
         parent
+        layout_infos containers.Map
         
         data MicroperimetryData
         axes_handles (:,:) cell
@@ -164,26 +217,19 @@ classdef MicroperimetryAxesArray < handle
         pre_pad (:,:)
         post_pad (:,:)
         
-        col_styles (1,3) string = MicroperimetryAxesArray.INDIVIDUAL_LAYOUT_COL_STYLES
+    end
+    
+    properties (Dependent, Access = private)
+        row_count
+        col_count
+        layout_info
     end
     
     properties (Access = private, Constant)
         VISION_TYPE (1,2) string = [Definitions.MESOPIC, Definitions.SCOTOPIC]
-        DATA_TYPE (1,3) string = [Definitions.SENSITIVITY, Definitions.MEANS, Definitions.Z_SCORE]
-        DATA_TYPE_APPEND (1,3) logical = [false true true]
-        DATA_RANGES (1,3) cell = {Definitions.SENSITIVITY_DATA_RANGE, Definitions.SENSITIVITY_DATA_RANGE, Definitions.Z_SCORE_DATA_RANGE}
-        COLORMAP_FNS (1,3) cell = {flipud(lajolla), flipud(lajolla), broc}
+        SENSITIVITY_COLORMAP (:,3) double = flipud(lajolla());
+        Z_SCORES_COLORMAP (:,3) double = broc();
         COLORBAR_PADDING (1,2) double = [70 0]
-        
-        INDIVIDUAL_LAYOUT_COL_STYLES = [Axes.INDIVIDUAL_STYLE, Axes.GROUP_MEANS_STYLE, Axes.Z_SCORES_STYLE]
-        GROUP_MEANS_LAYOUT_COL_STYLES = [Axes.GROUP_MEANS_STYLE, Axes.GROUP_MEANS_STYLE, Axes.ZSCORES_STYLE]
-        
-        INDIVIDUAL_LAYOUT_KEYWORDS = [Definitions.INDIVIDUAL, Definitions.GROUP_MEANS, Definitions.Z_SCORES]
-        GROUP_MEANS_LAYOUT_KEYWORDS = [Definitions.GROUP_MEANS, Definitions.GROUP_MEANS, Definitions.Z_SCORES]
-        % filter data on keyword
-        % build combo box for left col
-        % build combo box for mid/right cols
-        % if gm_layout, left col data record index is forbidden in mid/right
     end
     
     methods (Access = private)
@@ -204,6 +250,20 @@ classdef MicroperimetryAxesArray < handle
             w = obj.axis_size(1);
             h = obj.axis_size(2);
             pos = [x y w h];
+        end
+    end
+    
+    methods % private accessors
+        function value = get.row_count(obj)
+            value = numel(obj.row_titles);
+        end
+        
+        function value = get.col_count(obj)
+            value = numel(obj.layout_info.column_styles);
+        end
+        
+        function value = get.layout_info(obj)
+            value = obj.layout_infos(char(obj.layout));
         end
     end
 end
