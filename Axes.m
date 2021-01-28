@@ -24,10 +24,9 @@ classdef Axes < handle
     end
     
     methods
-        function obj = Axes(parent, position)
+        function obj = Axes(parent)
             m = axes(parent);
             m.Units = "pixels";
-            m.Position = position;
             m.XAxisLocation = "top";
             m.YAxisLocation = "right";
             m.TickLabelInterpreter = "latex";
@@ -37,7 +36,6 @@ classdef Axes < handle
             
             d = axes(parent);
             d.Units = "pixels";
-            d.Position = position;
             d.XAxisLocation = "bottom";
             d.YAxisLocation = "left";
             
@@ -55,6 +53,11 @@ classdef Axes < handle
             obj.deg_ax = d;
             obj.mm_ax = m;
             obj.scatter_h = s;
+        end
+        
+        function set_position(obj, position)
+            obj.deg_ax.Position = position;
+            obj.mm_ax.Position = position;
         end
         
         function set_color_info(obj, side, cmap, range)
