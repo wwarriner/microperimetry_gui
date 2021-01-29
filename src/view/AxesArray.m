@@ -3,11 +3,6 @@ classdef AxesArray < handle
         axis_size (1,2) double = [320, 320]
         in_padding (1,2) double = [20, 20]
         point_size (1,1) double = 60
-        
-        left_colormap_fn
-        left_colorbar_visible (1,1) logical = true
-        right_colormap_fn
-        right_colorbar_visible (1,1) logical = true
     end
     
     methods
@@ -17,18 +12,25 @@ classdef AxesArray < handle
             obj.column_count = column_count;
         end
         
-        function add_axes(obj, ax, row, col)
+        function set_left_colorbar(obj, cb)
+            cb.location = "west";
+            cb.update();
+            obj.left_colorbar = cb;
+        end
+        
+        function set_right_colorbar(obj, cb)
+            cb.location = "east";
+            cb.update();
+            obj.left_colorbar = cb;
+        end
+        
+        function set_axes(obj, ax, row, col)
             assert(0 <= row && row <= obj.row_count);
             assert(0 <= row && row <= obj.row_count);
             obj.axes_handles{row, col} = ax;
-                    
-            ax.location(Axes.TOP_LOCATION) = row == 1;
-            ax.location(Axes.BOTTOM_LOCATION) = row == obj.row_count;
-            ax.location(Axes.LEFT_LOCATION) = col == 1;
-            ax.location(Axes.RIGHT_LOCATION) = col == obj.column_count;
         end
         
-        function build(obj)
+        function update(obj)
             obj.compute_padding();
             for row = 1 : obj.row_count
                 for col = 1 : obj.column_count
@@ -39,26 +41,24 @@ classdef AxesArray < handle
                     ax.set_position(position);
                 end
             end
-            
-            if obj.left_colorbar_visible
-                left_colorbar_handle = Colorbar();
-                left_colorbar_handle.location = "west";
-                left_colorbar_handle.cticks = Definitions.SENSITIVITY_TICKS;
-                left_colorbar_handle.label = "mean log sensitivity, dB";
-                left_colorbar_handle.cmap = obj.left_colormap_fn();
-                left_colorbar_handle.apply(obj.parent);
-                obj.left_colorbar = left_colorbar_handle;
+        end
+
+        function transplant(obj, new_parent)
+            if ~isempty(obj.axes_handles)
+                for row = 1 : obj.row_count
+                    for col = 1 : obj.column_count
+                        ax = obj.axes_handles{row, col};
+                        ax.transplant(new_parent);
+                    end
+                end
             end
-            
-            if obj.right_colorbar_visible
-                right_colorbar_handle = Colorbar();
-                right_colorbar_handle.location = "east";
-                right_colorbar_handle.cticks = Definitions.Z_SCORE_TICKS;
-                right_colorbar_handle.label = "z-score";
-                right_colorbar_handle.cmap = obj.right_colormap_fn();
-                right_colorbar_handle.apply(obj.parent);
-                obj.right_colorbar = right_colorbar_handle;
+            if ~isempty(obj.left_colorbar)
+                obj.left_colorbar.transplant(new_parent);
             end
+            if ~isempty(obj.right_colorbar)
+                obj.right_colorbar.transplant(new_parent);
+            end
+            obj.parent = new_parent;
         end
     end
     
@@ -77,7 +77,7 @@ classdef AxesArray < handle
     end
     
     properties (Access = private, Constant)
-        COLORBAR_PADDING (1,2) double = [70 0]
+        COLORBAR_PADDING (1,2) double = [70 0] % HACK, colorbar should know its size
     end
     
     methods (Access = private)
