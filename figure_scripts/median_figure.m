@@ -1,8 +1,6 @@
 %% DEFNS
-OUT_NAME = "figure.pdf";
+OUT_NAME = "figure";
 
-ROW_NAMES = [Definitions.SCOTOPIC, Definitions.MESOPIC];
-COLUMN_NAMES = ["normal", "early", "intermediate"];
 ECCENTRICITY_DEG = strjoin([init_cap(Definitions.ECCENTRICITY), Definitions.DEGREES_UNITS], ", ");
 ECCENTRICITY_MM = strjoin([init_cap(Definitions.ECCENTRICITY), Definitions.MM_UNITS], ", ");
 
@@ -10,12 +8,13 @@ SENSITIVITY_COLORMAP = flipud(lajolla);
 POINT_SIZE = 60;
 
 %% DATA
-coordinates_file = "Coordinates17.csv";
-c = Coordinates(coordinates_file);
+% coordinates_file_path = [];
+% data_file_path = [];
+% data = median_table(coordinates_file_path, data_file_path);
 
-data_file = "medians.csv";
-data = readtable(data_file);
-
+%% NAMES
+row_names = unique(data.vision, "stable");
+column_names = unique(data.class, "stable");
 
 %% FIGURE
 fh = figure();
@@ -60,25 +59,21 @@ mm_fmt.colorbar = s_cb;
 
 %% BUILD AXES
 for row = 1 : ROW_COUNT
-    row_name = ROW_NAMES(row);
-    row_name_title = init_cap(row_name);
-    row_label = row_name_title;
+    row_name = row_names(row);
     for column = 1 : COLUMN_COUNT
-        column_name = COLUMN_NAMES(column);
-        column_name_title = init_cap(column_name);
-        column_label = strjoin(["Median Values", column_name_title], ", ");
+        column_name = column_names(column);
         
         ax = Axes(fh);
         
         df = deg_fmt.copy();
         df.x_label = ECCENTRICITY_DEG;
         if row < ROW_COUNT; df.x_label = ""; df.x_tick = []; df.x_tick_label = []; end
-        df.y_label = [row_label, ECCENTRICITY_DEG];
+        df.y_label = [row_name, ECCENTRICITY_DEG];
         if 1 < column; df.y_label = ""; df.y_tick = []; df.y_tick_label = []; end
         ax.apply_to_primary_axes(@df.apply);
         
         mf = mm_fmt.copy();
-        mf.x_label = [column_label, ECCENTRICITY_MM];
+        mf.x_label = [column_name, ECCENTRICITY_MM];
         if 1 < row; mf.x_label = ""; mf.x_tick = []; mf.x_tick_label = []; end
         mf.y_label = ECCENTRICITY_MM;
         if column < COLUMN_COUNT; mf.y_label = ""; mf.y_tick = []; mf.y_tick_label = []; end
@@ -91,13 +86,16 @@ for row = 1 : ROW_COUNT
         
         scatter = ax.apply_to_primary_axes(@LabeledScatter);
         
-        vision = ROW_NAMES(row);
-        class = COLUMN_NAMES(column);
-        indices = data.vision == vision & data.class == class;
+        vision = row_names(row);
+        class = column_names(column);
+        indices = ...
+            data.vision == vision ...
+            & data.class == class ...
+            & data.(lower(vision));
         values = data(indices, :);
-        scatter.v = c.filter(values.median, vision);
-        scatter.x = c.get_x(vision);
-        scatter.y = c.get_y(vision);
+        scatter.v = values.value;
+        scatter.x = values.x;
+        scatter.y = values.y;
         scatter.size_data = POINT_SIZE;
         scatter.update();
         
@@ -107,6 +105,7 @@ end
 ax_array.update();
 
 %% Save
-%export_fig(OUT_NAME, '-nofontswap', fh);
+%export_fig(strjoin([OUT_NAME, ".png"], ""), fh);
+%export_fig(strjoin([OUT_NAME, ".pdf"], ""), '-nofontswap', fh);
 
 %% Turn this into generic controller class
