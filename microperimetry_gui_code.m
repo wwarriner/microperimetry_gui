@@ -2,87 +2,139 @@ classdef microperimetry_gui < matlab.apps.AppBase
     
     % Properties that correspond to app components
     properties (Access = public)
-        UIFigure                    matlab.ui.Figure
-        OptionsPanel                matlab.ui.container.Panel
-        EyeSideButtonGroup          matlab.ui.container.ButtonGroup
-        ODButton                    matlab.ui.control.ToggleButton
-        OSButton                    matlab.ui.control.ToggleButton
-        LoadDataButton              matlab.ui.control.Button
-        DisplayValuesSwitchLabel    matlab.ui.control.Label
-        DisplayValuesSwitch         matlab.ui.control.Switch
-        SaveFigureAsButton          matlab.ui.control.Button
-        LookupLabel                 matlab.ui.control.Label
-        LookupListBox               matlab.ui.control.ListBox
-        PatientClassListBox_2Label  matlab.ui.control.Label
-        PatientClassListBox         matlab.ui.control.ListBox
-        FigureLayoutLabel           matlab.ui.control.Label
-        FigureLayoutListBox         matlab.ui.control.ListBox
-        DisplayPanel                matlab.ui.container.Panel
+        UIFigure                 matlab.ui.Figure
+        OptionsPanel             matlab.ui.container.Panel
+        EyeSideButtonGroup       matlab.ui.container.ButtonGroup
+        ODButton                 matlab.ui.control.ToggleButton
+        OSButton                 matlab.ui.control.ToggleButton
+        LoadDataButton           matlab.ui.control.Button
+        ValueDisplaySwitchLabel  matlab.ui.control.Label
+        ValueDisplaySwitch       matlab.ui.control.Switch
+        SaveFigureAsButton       matlab.ui.control.Button
+        LeftColumnSourceLabel    matlab.ui.control.Label
+        LeftColumnTree           matlab.ui.container.Tree
+        NodeLeft                 matlab.ui.container.TreeNode
+        NodeLeft1                matlab.ui.container.TreeNode
+        NodeLeft2                matlab.ui.container.TreeNode
+        NodeLeft3                matlab.ui.container.TreeNode
+        NodeLeft4                matlab.ui.container.TreeNode
+        CenterColumnSourceLabel  matlab.ui.control.Label
+        CenterColumnTree         matlab.ui.container.Tree
+        NodeCenter               matlab.ui.container.TreeNode
+        NodeCenter1              matlab.ui.container.TreeNode
+        NodeCenter2              matlab.ui.container.TreeNode
+        NodeCenter3              matlab.ui.container.TreeNode
+        NodeCenter4              matlab.ui.container.TreeNode
+        RightColumnSourceLabel   matlab.ui.control.Label
+        RightColumnTree          matlab.ui.container.Tree
+        NodeRight                matlab.ui.container.TreeNode
+        NodeRight1               matlab.ui.container.TreeNode
+        NodeRight2               matlab.ui.container.TreeNode
+        NodeRight3               matlab.ui.container.TreeNode
+        NodeRight4               matlab.ui.container.TreeNode
+        DisplayPanel             matlab.ui.container.Panel
     end
     
     properties (Access = private)
         axes
+        coordinates
         data
+        
+        left_selection
+        center_selection
+        right_selection
     end
     
     methods (Access = private)
-        function update(app)
-            app.axes.update();
-            app.update_lookup_list_box();
-            app.update_patient_class_list_box();
-            app.update_figure_layout_list_box();
+        % TODO tree class
+        % TODO units in data and colorbar selection depending on that?
+        
+        function update_trees(app)
+            app.update_tree(app.LeftColumnTree);
+            app.left_selection = app.LeftColumnTree.SelectedNodes;
+            app.update_tree(app.CenterColumnTree);
+            app.center_selection = app.CenterColumnTree.SelectedNodes;
+            app.update_tree(app.RightColumnTree);
+            app.right_selection = app.RightColumnTree.SelectedNodes;
         end
         
-        function update_axes(app)
-            app.axes.update();
-        end
-        
-        function update_lookup_list_box(app)
-            app.LookupLabel.Text = app.axes.lookup_title;
+        function update_tree(app, tree)
+            % get old selection
+            [old_class, old_data_type] = app.get_old_selection(tree);
+            has_old_selection = ~isempty(old_class) && ~isempty(old_data_type);
             
-            old_value = app.LookupListBox.Value;
-            app.LookupListBox.Items = app.axes.lookup_items;
-            new_items = app.LookupListBox.Items;
-            if ismember(old_value, new_items)
-                app.LookupListBox.Value = old_value;
-            elseif 0 < numel(new_items)
-                app.LookupListBox.Value = new_items(1);
-            else
-                app.LookupListBox.Enable = "off";
+            % remove old nodes
+            tree.Children.delete();
+            
+            % build new nodes
+            if app.data.empty
+                tree.SelectedNodes = [];
                 return;
             end
-            app.axes.lookup_item = app.LookupListBox.Value;
+            classes = app.data.get_classes();
+            for i = 1 : numel(classes)
+                class = classes(i);
+                node = uitreenode(tree, "text", class);
+                data_types = app.data.get_data_types(class);
+                for j = 1 : numel(data_types)
+                    uitreenode(node, "text", data_types(j));
+                end
+            end
+            expand(tree, "all");
             
-            if isempty(app.axes.lookup_items)
-                app.LookupListBox.Enable = "off";
+            if has_old_selection
+                tree.SelectedNodes = app.determine_old_selection(tree, old_class, old_data_type);
             else
-                app.LookupListBox.Enable = "on";
+                tree.SelectedNodes = [];
             end
         end
         
-        function update_patient_class_list_box(app)
-            old_value = app.PatientClassListBox.Value;
-            app.PatientClassListBox.Items = app.axes.classes;
-            new_items = app.PatientClassListBox.Items;
-            if ismember(old_value, new_items)
-                app.PatientClassListBox.Value = old_value;
-            elseif 0 < numel(new_items)
-                app.PatientClassListBox.Value = new_items(1);
+        function [old_class, old_data_type] = get_old_selection(~, tree)
+            old_selection = tree.SelectedNodes;
+            count = numel(old_selection);
+            if count == 0
+                old_class = [];
+                old_data_type = [];
+            elseif count == 1
+                old_class = old_selection.Parent.Text;
+                old_data_type = old_selection.Text;
             else
-                app.PatientClassListBox.Enable = "off";
-                return;
-            end
-            app.axes.patient_class = app.PatientClassListBox.Value;
-            
-            if isempty(app.axes.classes)
-                app.PatientClassListBox.Enable = "off";
-            else
-                app.PatientClassListBox.Enable = "on";
+                assert(false);
             end
         end
         
-        function update_figure_layout_list_box(app)
-            app.FigureLayoutListBox.Items = pretty_print(app.axes.allowed_layouts);
+        function node = determine_old_selection(~, tree, old_class, old_data_type)
+            select_none = false;
+            
+            selected_class_node = [];
+            for class_node = tree.Children(:).'
+                if string(class_node.Text) == string(old_class)
+                    selected_class_node = class_node;
+                    break;
+                end
+            end
+            if isempty(selected_class_node)
+                select_none = true;
+            end
+            
+            selected_data_type_node = [];
+            if ~select_none
+                for data_type_node = selected_class_node.Children(:).'
+                    if string(data_type_node.Text) == string(old_data_type)
+                        selected_data_type_node = data_type_node;
+                        break;
+                    end
+                end
+                if isempty(selected_data_type_node)
+                    select_none = true;
+                end
+            end
+            
+            if select_none
+                node = [];
+            else
+                node = selected_data_type_node;
+            end
         end
     end
     
@@ -92,53 +144,90 @@ classdef microperimetry_gui < matlab.apps.AppBase
         % Code that executes after component creation
         function startupFcn(app)
             addpath(genpath("lib"));
+            addpath(genpath("src"));
             
-            c = Coordinates("coordinates17.csv");
-            d = MicroperimetryData(c);
+            d = Data();
+            sensitivity_colormap = flipud(lajolla());
+            z_scores_colormap = broc();
             
-            i_info = LayoutInfo(d);
-            i_info.column_styles = [Axes.INDIVIDUAL_STYLE, Axes.GROUP_MEANS_STYLE, Axes.Z_SCORES_STYLE];
-            i_info.column_keywords = [Definitions.INDIVIDUAL, Definitions.GROUP_MEANS, Definitions.Z_SCORES];
-            i_info.column_data_sources = [Definitions.LOOKUP_DATA_SOURCE, Definitions.CLASS_DATA_SOURCE, Definitions.CLASS_DATA_SOURCE];
-            i_info.lookup_class = Definitions.INDIVIDUAL;
-            i_info.lookup_title = pretty_print(Definitions.PATIENT);
-            gm_info = LayoutInfo(d);
-            gm_info.column_styles = [Axes.GROUP_MEANS_STYLE, Axes.GROUP_MEANS_STYLE, Axes.Z_SCORES_STYLE];
-            gm_info.column_keywords = [Definitions.GROUP_MEANS, Definitions.GROUP_MEANS, Definitions.Z_SCORES];
-            gm_info.column_data_sources = [Definitions.LOOKUP_DATA_SOURCE, Definitions.CLASS_DATA_SOURCE, Definitions.CLASS_DATA_SOURCE];
-            gm_info.lookup_class = Definitions.GROUP_MEANS;
-            gm_info.lookup_title = pretty_print(Definitions.PATIENT);
-            keys = { ...
-                char(Definitions.INDIVIDUAL), ...
-                char(Definitions.GROUP_MEANS) ...
-                };
-            values = { ...
-                i_info, ...
-                gm_info ...
-                };
-            layouts = containers.Map(keys, values);
+            sensitivity_colorbar = Colorbar(app.DisplayPanel);
+            sensitivity_colorbar.c_label = sprintf("mean log sensitivity, %s", Definitions.SENSITIVITY_UNITS);
+            sensitivity_colorbar.c_lim = Definitions.SENSITIVITY_DATA_RANGE;
+            sensitivity_colorbar.c_tick = Definitions.SENSITIVITY_TICKS;
+            sensitivity_colorbar.c_tick_label = Definitions.SENSITIVITY_TICKS;
+            sensitivity_colorbar.cmap = sensitivity_colormap;
             
-            ax = MicroperimetryAxesArray(app.DisplayPanel, d, layouts);
-            ax.build();
-            ax.label_visibility_state = string(app.DisplayValuesSwitch.Value);
+            z_scores_colorbar = Colorbar(app.DisplayPanel);
+            z_scores_colorbar.c_label = "Z-score";
+            z_scores_colorbar.c_lim = Definitions.Z_SCORE_DATA_RANGE;
+            z_scores_colorbar.c_tick = Definitions.Z_SCORE_TICKS;
+            z_scores_colorbar.c_tick_label = Definitions.Z_SCORE_TICKS;
+            z_scores_colorbar.cmap = z_scores_colormap;
+            
+            degrees_format = AxesFormat();
+            degrees_format.x_lim = Definitions.DEGREES_LIM;
+            degrees_format.x_tick = Definitions.DEGREES_TICK;
+            degrees_format.x_tick_label = Definitions.DEGREES_TICK_LABEL;
+            degrees_format.y_lim = Definitions.DEGREES_LIM;
+            degrees_format.y_tick = Definitions.DEGREES_TICK;
+            degrees_format.y_tick_label = Definitions.DEGREES_TICK_LABEL;
+            degrees_format.colorbar = sensitivity_colorbar; % todo
+            
+            mm_format = AxesFormat();
+            mm_format.x_lim = Definitions.MM_LIM;
+            mm_format.x_tick = Definitions.MM_TICK;
+            mm_format.x_tick_label = Definitions.MM_TICK_LABEL;
+            mm_format.y_lim = Definitions.MM_LIM;
+            mm_format.y_tick = Definitions.MM_TICK;
+            mm_format.y_tick_label = Definitions.MM_TICK_LABEL;
+            mm_format.colorbar = sensitivity_colorbar;
+            
+            row_count = MicroperimetryAxesArray.ROW_COUNT;
+            column_count = MicroperimetryAxesArray.COLUMN_COUNT;
+            ax_array = MicroperimetryAxesArray(app.DisplayPanel);
+            ax_array.set_left_colorbar(sensitivity_colorbar);
+            ax_array.set_right_colorbar(z_scores_colorbar);
+            for row = 1 : row_count
+                for col = 1 : column_count
+                    location = false(1, 4);
+                    if row == 1; location(MicroperimetryAxes.TOP) = true; end
+                    if row == row_count; location(MicroperimetryAxes.BOTTOM) = true; end
+                    if col == 1; location(MicroperimetryAxes.LEFT) = true; end
+                    if col == column_count; location(MicroperimetryAxes.RIGHT) = true; end
+                    ax = MicroperimetryAxes(app.DisplayPanel, d, location);
+                    ax.set_degrees_format(degrees_format.copy());
+                    ax.set_mm_format(mm_format.copy());
+                    grid = ax.apply_to_mm_axes(@EtdrsGrid);
+                    ax.register_feature("grid", grid);
+                    if row == row_count && col == column_count
+                        rose = ax.apply_to_mm_axes(@CompassRose);
+                        ax.register_feature("rose", rose);
+                    end
+                    ax.update_appearance();
+                    ax_array.set_axes(ax, row, col);
+                end
+            end
             
             app.ODButton.Tag = Definitions.OD_CHIRALITY;
             app.OSButton.Tag = Definitions.OS_CHIRALITY;
             
             app.data = d;
-            app.axes = ax;
+            app.axes = ax_array;
             
-            app.update_lookup_list_box();
-            app.update_patient_class_list_box();
-            app.update_figure_layout_list_box();
-            app.axes.layout = app.FigureLayoutListBox.Value;
-            app.axes.update();
+            ax_array.chirality = string(app.EyeSideButtonGroup.SelectedObject.Tag);
+            ax_array.labels_visible = lower(string(app.ValueDisplaySwitch.Value));
+            
+            app.update_trees();
+            app.axes.update_layout();
+            app.axes.update_chirality();
+            app.axes.update_values();
+            app.axes.update_label_visibility();
         end
         
         % Selection changed function: EyeSideButtonGroup
         function EyeSideButtonGroupSelectionChanged(app, event)
             selectedButton = app.EyeSideButtonGroup.SelectedObject;
-            app.data.chirality = selectedButton.Tag;
+            app.axes.chirality = selectedButton.Tag;
             app.axes.update_chirality();
         end
         
@@ -155,15 +244,14 @@ classdef microperimetry_gui < matlab.apps.AppBase
             catch e
                 uialert(app.UIFigure, e.message, "Error loading file");
             end
-            app.update_lookup_list_box();
-            app.update_patient_class_list_box();
-            app.update_figure_layout_list_box();
-            app.update_axes();
+            
+            app.update_trees();
+            app.axes.update_values();
         end
         
-        % Value changed function: DisplayValuesSwitch
-        function DisplayValuesSwitchValueChanged(app, event)
-            app.axes.label_visibility_state = string(app.DisplayValuesSwitch.Value);
+        % Value changed function: ValueDisplaySwitch
+        function ValueDisplaySwitchValueChanged(app, event)
+            app.axes.labels_visible = lower(string(app.ValueDisplaySwitch.Value));
             app.axes.update_label_visibility();
         end
         
@@ -190,7 +278,7 @@ classdef microperimetry_gui < matlab.apps.AppBase
             ax.row_titles = app.axes.row_titles;
             ax.layout = app.axes.layout;
             ax.build();
-            ax.label_visibility_state = string(app.DisplayValuesSwitch.Value);
+            ax.label_visibility_state = string(app.ValueDisplaySwitch.Value);
             ax.update();
             handle = fh;
             
@@ -199,7 +287,7 @@ classdef microperimetry_gui < matlab.apps.AppBase
                     case PNG_FILTER
                         export_fig(path, handle);
                     case PDF_FILTER
-                        export_fig(path, handle);
+                        export_fig(path, '-nofontswap', handle);
                     case EPS_FILTER
                         export_fig(path, handle);
                     case TEX_FILTER
@@ -212,33 +300,52 @@ classdef microperimetry_gui < matlab.apps.AppBase
             end
         end
         
-        % Value changed function: LookupListBox
-        function LookupListBoxValueChanged(app, event)
-            value = app.LookupListBox.Value;
-            app.axes.lookup_item = value;
-            app.update_patient_class_list_box();
-            app.update_axes();
+        % Selection changed function: LeftColumnTree
+        function LeftColumnTreeSelectionChanged(app, event)
+            selectedNodes = app.LeftColumnTree.SelectedNodes;
+            assert(numel(selectedNodes) == 1);
+            
+            if selectedNodes.Parent == app.LeftColumnTree
+                app.LeftColumnTree.SelectedNodes = app.left_selection;
+                return;
+            end
+            app.left_selection = selectedNodes;
+            
+            app.axes.left_class = selectedNodes.Parent.Text;
+            app.axes.left_data_type = selectedNodes.Text;
+            app.axes.update_values();
         end
         
-        % Value changed function: PatientClassListBox
-        function PatientClassListBoxValueChanged(app, event)
-            value = app.PatientClassListBox.Value;
-            app.axes.patient_class = value;
-            app.update_axes();
+        % Selection changed function: CenterColumnTree
+        function CenterColumnTreeSelectionChanged(app, event)
+            selectedNodes = app.CenterColumnTree.SelectedNodes;
+            assert(numel(selectedNodes) == 1);
+            
+            if selectedNodes.Parent == app.CenterColumnTree
+                app.CenterColumnTree.SelectedNodes = app.center_selection;
+                return;
+            end
+            app.center_selection = selectedNodes;
+            
+            app.axes.center_class = selectedNodes.Parent.Text;
+            app.axes.center_data_type = selectedNodes.Text;
+            app.axes.update_values();
         end
         
-        % Value changed function: FigureLayoutListBox
-        function FigureLayoutListBoxValueChanged(app, event)
-            value = app.FigureLayoutListBox.Value;
-            app.axes.layout = value;
-            %             if app.data.has_individuals()
-            %                 app.axes.layout = app.axes.INDIVIDUAL_LAYOUT;
-            %             else
-            %                 app.axes.layout = app.axes.GROUP_MEANS_LAYOUT;
-            %             end
-            app.update_lookup_list_box();
-            app.update_patient_class_list_box();
-            app.update_axes();
+        % Selection changed function: RightColumnTree
+        function RightColumnTreeSelectionChanged(app, event)
+            selectedNodes = app.RightColumnTree.SelectedNodes;
+            assert(numel(selectedNodes) == 1);
+            
+            if selectedNodes.Parent == app.RightColumnTree
+                app.RightColumnTree.SelectedNodes = app.right_selection;
+                return;
+            end
+            app.right_selection = selectedNodes;
+            
+            app.axes.right_class = selectedNodes.Parent.Text;
+            app.axes.right_data_type = selectedNodes.Text;
+            app.axes.update_values();
         end
     end
     
@@ -268,7 +375,7 @@ classdef microperimetry_gui < matlab.apps.AppBase
             app.EyeSideButtonGroup.SelectionChangedFcn = createCallbackFcn(app, @EyeSideButtonGroupSelectionChanged, true);
             app.EyeSideButtonGroup.Title = 'Eye Side';
             app.EyeSideButtonGroup.FontSize = 14;
-            app.EyeSideButtonGroup.Position = [11 288 158 80];
+            app.EyeSideButtonGroup.Position = [11 258 158 80];
             
             % Create ODButton
             app.ODButton = uitogglebutton(app.EyeSideButtonGroup);
@@ -290,68 +397,118 @@ classdef microperimetry_gui < matlab.apps.AppBase
             app.LoadDataButton.Position = [11 768 158 40];
             app.LoadDataButton.Text = 'Load data...';
             
-            % Create DisplayValuesSwitchLabel
-            app.DisplayValuesSwitchLabel = uilabel(app.OptionsPanel);
-            app.DisplayValuesSwitchLabel.HorizontalAlignment = 'center';
-            app.DisplayValuesSwitchLabel.FontSize = 14;
-            app.DisplayValuesSwitchLabel.Position = [40 255 97 22];
-            app.DisplayValuesSwitchLabel.Text = 'Display Values';
+            % Create ValueDisplaySwitchLabel
+            app.ValueDisplaySwitchLabel = uilabel(app.OptionsPanel);
+            app.ValueDisplaySwitchLabel.HorizontalAlignment = 'center';
+            app.ValueDisplaySwitchLabel.FontSize = 14;
+            app.ValueDisplaySwitchLabel.Position = [42 226 90 22];
+            app.ValueDisplaySwitchLabel.Text = 'Value Display';
             
-            % Create DisplayValuesSwitch
-            app.DisplayValuesSwitch = uiswitch(app.OptionsPanel, 'slider');
-            app.DisplayValuesSwitch.ValueChangedFcn = createCallbackFcn(app, @DisplayValuesSwitchValueChanged, true);
-            app.DisplayValuesSwitch.FontSize = 14;
-            app.DisplayValuesSwitch.Position = [57 219 64 28];
-            app.DisplayValuesSwitch.Value = 'On';
+            % Create ValueDisplaySwitch
+            app.ValueDisplaySwitch = uiswitch(app.OptionsPanel, 'slider');
+            app.ValueDisplaySwitch.ValueChangedFcn = createCallbackFcn(app, @ValueDisplaySwitchValueChanged, true);
+            app.ValueDisplaySwitch.FontSize = 14;
+            app.ValueDisplaySwitch.Position = [55 189 64 28];
             
             % Create SaveFigureAsButton
             app.SaveFigureAsButton = uibutton(app.OptionsPanel, 'push');
             app.SaveFigureAsButton.ButtonPushedFcn = createCallbackFcn(app, @SaveFigureAsButtonPushed, true);
             app.SaveFigureAsButton.FontSize = 14;
-            app.SaveFigureAsButton.Position = [11 8 118 40];
+            app.SaveFigureAsButton.Position = [11 8 158 40];
             app.SaveFigureAsButton.Text = 'Save figure...';
             
-            % Create LookupLabel
-            app.LookupLabel = uilabel(app.OptionsPanel);
-            app.LookupLabel.VerticalAlignment = 'top';
-            app.LookupLabel.FontSize = 14;
-            app.LookupLabel.Position = [11 666 158 22];
-            app.LookupLabel.Text = '<Lookup>';
+            % Create LeftColumnSourceLabel
+            app.LeftColumnSourceLabel = uilabel(app.OptionsPanel);
+            app.LeftColumnSourceLabel.FontSize = 14;
+            app.LeftColumnSourceLabel.Position = [11 736 158 22];
+            app.LeftColumnSourceLabel.Text = 'Left Column Source';
             
-            % Create LookupListBox
-            app.LookupListBox = uilistbox(app.OptionsPanel);
-            app.LookupListBox.Items = {'Item 1', 'Item 2', 'Item 3', 'Item 4', 'Item 5', 'Item 6', 'Item 7', 'Item 8', 'Item 9', 'Item 10', 'Item 11', 'Item 12'};
-            app.LookupListBox.ValueChangedFcn = createCallbackFcn(app, @LookupListBoxValueChanged, true);
-            app.LookupListBox.FontSize = 14;
-            app.LookupListBox.Position = [11 468 158 199];
+            % Create LeftColumnTree
+            app.LeftColumnTree = uitree(app.OptionsPanel);
+            app.LeftColumnTree.SelectionChangedFcn = createCallbackFcn(app, @LeftColumnTreeSelectionChanged, true);
+            app.LeftColumnTree.Position = [11 631 158 106];
             
-            % Create PatientClassListBox_2Label
-            app.PatientClassListBox_2Label = uilabel(app.OptionsPanel);
-            app.PatientClassListBox_2Label.VerticalAlignment = 'top';
-            app.PatientClassListBox_2Label.FontSize = 14;
-            app.PatientClassListBox_2Label.Position = [11 436 158 22];
-            app.PatientClassListBox_2Label.Text = 'Patient Class';
+            % Create NodeLeft
+            app.NodeLeft = uitreenode(app.LeftColumnTree);
+            app.NodeLeft.Text = 'NodeLeft';
             
-            % Create PatientClassListBox
-            app.PatientClassListBox = uilistbox(app.OptionsPanel);
-            app.PatientClassListBox.Items = {'Item 1', 'Item 2', 'Item 3'};
-            app.PatientClassListBox.ValueChangedFcn = createCallbackFcn(app, @PatientClassListBoxValueChanged, true);
-            app.PatientClassListBox.FontSize = 14;
-            app.PatientClassListBox.Position = [11 375 158 62];
+            % Create NodeLeft1
+            app.NodeLeft1 = uitreenode(app.NodeLeft);
+            app.NodeLeft1.Text = 'NodeLeft1';
             
-            % Create FigureLayoutLabel
-            app.FigureLayoutLabel = uilabel(app.OptionsPanel);
-            app.FigureLayoutLabel.VerticalAlignment = 'top';
-            app.FigureLayoutLabel.FontSize = 14;
-            app.FigureLayoutLabel.Position = [11 736 158 22];
-            app.FigureLayoutLabel.Text = 'Figure Layout';
+            % Create NodeLeft2
+            app.NodeLeft2 = uitreenode(app.NodeLeft);
+            app.NodeLeft2.Text = 'NodeLeft2';
             
-            % Create FigureLayoutListBox
-            app.FigureLayoutListBox = uilistbox(app.OptionsPanel);
-            app.FigureLayoutListBox.Items = {'Item 1', 'Item 2'};
-            app.FigureLayoutListBox.ValueChangedFcn = createCallbackFcn(app, @FigureLayoutListBoxValueChanged, true);
-            app.FigureLayoutListBox.FontSize = 14;
-            app.FigureLayoutListBox.Position = [11 695 158 42];
+            % Create NodeLeft3
+            app.NodeLeft3 = uitreenode(app.NodeLeft);
+            app.NodeLeft3.Text = 'NodeLeft3';
+            
+            % Create NodeLeft4
+            app.NodeLeft4 = uitreenode(app.NodeLeft);
+            app.NodeLeft4.Text = 'NodeLeft4';
+            
+            % Create CenterColumnSourceLabel
+            app.CenterColumnSourceLabel = uilabel(app.OptionsPanel);
+            app.CenterColumnSourceLabel.FontSize = 14;
+            app.CenterColumnSourceLabel.Position = [11 597 158 22];
+            app.CenterColumnSourceLabel.Text = 'Center Column Source';
+            
+            % Create CenterColumnTree
+            app.CenterColumnTree = uitree(app.OptionsPanel);
+            app.CenterColumnTree.SelectionChangedFcn = createCallbackFcn(app, @CenterColumnTreeSelectionChanged, true);
+            app.CenterColumnTree.Position = [11 492 158 106];
+            
+            % Create NodeCenter
+            app.NodeCenter = uitreenode(app.CenterColumnTree);
+            app.NodeCenter.Text = 'NodeCenter';
+            
+            % Create NodeCenter1
+            app.NodeCenter1 = uitreenode(app.NodeCenter);
+            app.NodeCenter1.Text = 'NodeCenter1';
+            
+            % Create NodeCenter2
+            app.NodeCenter2 = uitreenode(app.NodeCenter);
+            app.NodeCenter2.Text = 'NodeCenter2';
+            
+            % Create NodeCenter3
+            app.NodeCenter3 = uitreenode(app.NodeCenter);
+            app.NodeCenter3.Text = 'NodeCenter3';
+            
+            % Create NodeCenter4
+            app.NodeCenter4 = uitreenode(app.NodeCenter);
+            app.NodeCenter4.Text = 'NodeCenter4';
+            
+            % Create RightColumnSourceLabel
+            app.RightColumnSourceLabel = uilabel(app.OptionsPanel);
+            app.RightColumnSourceLabel.FontSize = 14;
+            app.RightColumnSourceLabel.Position = [11 457 158 22];
+            app.RightColumnSourceLabel.Text = 'Right Column Source';
+            
+            % Create RightColumnTree
+            app.RightColumnTree = uitree(app.OptionsPanel);
+            app.RightColumnTree.SelectionChangedFcn = createCallbackFcn(app, @RightColumnTreeSelectionChanged, true);
+            app.RightColumnTree.Position = [11 352 158 106];
+            
+            % Create NodeRight
+            app.NodeRight = uitreenode(app.RightColumnTree);
+            app.NodeRight.Text = 'NodeRight';
+            
+            % Create NodeRight1
+            app.NodeRight1 = uitreenode(app.NodeRight);
+            app.NodeRight1.Text = 'NodeRight1';
+            
+            % Create NodeRight2
+            app.NodeRight2 = uitreenode(app.NodeRight);
+            app.NodeRight2.Text = 'NodeRight2';
+            
+            % Create NodeRight3
+            app.NodeRight3 = uitreenode(app.NodeRight);
+            app.NodeRight3.Text = 'NodeRight3';
+            
+            % Create NodeRight4
+            app.NodeRight4 = uitreenode(app.NodeRight);
+            app.NodeRight4.Text = 'NodeRight4';
             
             % Create DisplayPanel
             app.DisplayPanel = uipanel(app.UIFigure);

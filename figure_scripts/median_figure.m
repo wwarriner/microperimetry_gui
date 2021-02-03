@@ -102,10 +102,8 @@ for row = 1 : ROW_COUNT
         ax_array.set_axes(ax, row, column);
     end
 end
-ax_array.update();
+ax_array.update_layout();
 
 %% Save
-%export_fig(strjoin([OUT_NAME, ".png"], ""), fh);
-%export_fig(strjoin([OUT_NAME, ".pdf"], ""), '-nofontswap', fh);
-
-%% Turn this into generic controller class
+export_fig(strjoin([OUT_NAME, ".png"], ""), fh);
+export_fig(strjoin([OUT_NAME, ".pdf"], ""), '-nofontswap', fh);

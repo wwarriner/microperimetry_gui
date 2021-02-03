@@ -5,6 +5,10 @@ classdef CompassRose < handle
     
     properties
         chirality (1,1) string = Definitions.OD_CHIRALITY
+        
+        font_name (1,1) string = "arial"
+        font_size (1,1) double = 10
+        interpreter (1,1) string = "tex"
     end
     
     methods
@@ -130,10 +134,12 @@ classdef CompassRose < handle
                 ];
         end
         
-        function format_text(~, th)
+        function format_text(obj, th)
+            th.FontName = obj.font_name;
+            th.FontSize = obj.font_size;
+            th.Interpreter = obj.interpreter;
             th.HorizontalAlignment = "center";
             th.VerticalAlignment = "middle";
-            th.Interpreter = "latex";
         end
     end
 end

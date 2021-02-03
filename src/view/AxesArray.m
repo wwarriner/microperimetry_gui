@@ -2,7 +2,11 @@ classdef AxesArray < handle
     properties
         axis_size (1,2) double = [320, 320]
         in_padding (1,2) double = [20, 20]
-        point_size (1,1) double = 60
+    end
+    
+    properties (SetAccess = private)
+        left_colorbar Colorbar
+        right_colorbar Colorbar
     end
     
     methods
@@ -30,27 +34,23 @@ classdef AxesArray < handle
             obj.axes_handles{row, col} = ax;
         end
         
-        function update(obj)
-            obj.compute_padding();
+        function apply(obj, fn)
             for row = 1 : obj.row_count
                 for col = 1 : obj.column_count
                     ax = obj.axes_handles{row, col};
-                    
-                    % flip row, pos from bottom
-                    position = obj.compute_position(col, obj.row_count - row + 1);
-                    ax.set_position(position);
+                    fn(ax, row, col);
                 end
             end
+        end
+        
+        function update_layout(obj)
+            obj.compute_padding();
+            obj.apply(@(ax,row,col)obj.update_position(ax, row, col));
         end
 
         function transplant(obj, new_parent)
             if ~isempty(obj.axes_handles)
-                for row = 1 : obj.row_count
-                    for col = 1 : obj.column_count
-                        ax = obj.axes_handles{row, col};
-                        ax.transplant(new_parent);
-                    end
-                end
+                obj.apply(@(ax,row,col)ax.transplant(new_parent));
             end
             if ~isempty(obj.left_colorbar)
                 obj.left_colorbar.transplant(new_parent);
@@ -66,9 +66,6 @@ classdef AxesArray < handle
         parent
         axes_handles (:,:) cell
         
-        left_colorbar Colorbar
-        right_colorbar Colorbar
-        
         row_count (1,1)
         column_count (1,1)
         
@@ -81,6 +78,11 @@ classdef AxesArray < handle
     end
     
     methods (Access = private)
+        function update_position(obj, ax, row, col)
+            position = obj.compute_position(col, obj.row_count - row + 1);
+            ax.set_position(position);
+        end
+        
         function compute_padding(obj)
             full = obj.parent.Position(3:4);
             counts = [obj.column_count, obj.row_count];

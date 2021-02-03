@@ -1,25 +1,10 @@
 classdef Coordinates < handle
     methods
-        function obj = Coordinates(csv_file_path)
+        function obj = Coordinates(coordinates_table)
             %{
             expects columns X and Y
             each row is one point
             %}
-            if nargin == 0
-                obj.t = table();
-            end
-            
-            t = readtable(csv_file_path);
-            assert(0 < height(t));
-            assert(2 <= width(t));
-            
-            t.Properties.VariableNames = lower(t.Properties.VariableNames);
-            assert(ismember("x", t.Properties.VariableNames));
-            assert(ismember("y", t.Properties.VariableNames));
-            assert(ismember(lower(Definitions.MESOPIC), t.Properties.VariableNames));
-            assert(ismember(lower(Definitions.SCOTOPIC), t.Properties.VariableNames));
-            
-            obj.t = t;
         end
         
         function x = get_x(obj, vision_type)
