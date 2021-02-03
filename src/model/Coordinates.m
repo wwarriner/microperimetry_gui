@@ -23,14 +23,14 @@ classdef Coordinates < handle
         end
         
         function x = get_x(obj, vision_type)
-            x = obj.limit_to_used(obj.t.x, vision_type);
+            x = obj.filter(obj.t.x, vision_type);
         end
         
         function y = get_y(obj, vision_type)
-            y = obj.limit_to_used(obj.t.y, vision_type);
+            y = obj.filter(obj.t.y, vision_type);
         end
         
-        function v = limit_to_used(obj, v, vision_type)
+        function v = filter(obj, v, vision_type)
             used = logical(obj.t{:, vision_type});
             v = v(used);
         end

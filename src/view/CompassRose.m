@@ -1,25 +1,22 @@
 classdef CompassRose < handle
+    %{
+    Units are in MM, apply to MM axes.
+    %}
+    
     properties
         chirality (1,1) string = Definitions.OD_CHIRALITY
-        
-        position (1,2) double {mustBeReal,mustBeFinite} = [0 0] % x, y of center
-        arrow_length (1,2) double {mustBeReal,mustBeFinite} = [1 1] % NT, SI arrows
-        label_nudge (1,1) double {mustBeReal,mustBeFinite,mustBeNonnegative} = 0.0
-        
-        line_width (1,1) double {mustBeReal,mustBeFinite,mustBePositive} = 1
-        color (1,3) double = [0 0 0]
     end
     
     methods
-        function apply(obj, axh)
-            is_held = ishold(axh);
-            hold(axh, "on");
+        function obj = CompassRose(parent)
+            is_held = ishold(parent);
+            hold(parent, "on");
             
-            qh = obj.draw_arrows(axh);
-            th = obj.add_labels(axh);
+            qh = obj.draw_arrows(parent);
+            th = obj.add_labels(parent);
             
             if ~is_held
-                hold(axh, "off");
+                hold(parent, "off");
             end
             
             obj.quiver_handle = qh;
@@ -47,6 +44,15 @@ classdef CompassRose < handle
         label_handles
     end
     
+    properties (Access = private, Constant)
+        POSITION (1,2) double {mustBeReal,mustBeFinite} = [3.2 -3.2] % x, y of center
+        ARROW_LENGTH (1,2) double {mustBeReal,mustBeFinite} = [1 1] % NT, SI arrows
+        LABEL_NUDGE (1,1) double {mustBeReal,mustBeFinite,mustBeNonnegative} = 0.25
+        
+        LINE_WIDTH (1,1) double {mustBeReal,mustBeFinite,mustBePositive} = 1
+        COLOR (1,3) double = [0 0 0]
+    end
+    
     methods (Access = private)
         function qh = draw_arrows(obj, axh)
             xyuv = obj.compute_arrow_xyuv();
@@ -58,14 +64,14 @@ classdef CompassRose < handle
                 xyuv(:, 4), ...
                 0 ...
                 );
-            qh.LineWidth = obj.line_width;
-            qh.Color = obj.color;
+            qh.LineWidth = obj.LINE_WIDTH;
+            qh.Color = obj.COLOR;
             qh.MaxHeadSize = 0.5;
         end
         
         function xyuv = compute_arrow_xyuv(obj)
-            x = obj.position(1);
-            y = obj.position(2);
+            x = obj.POSITION(1);
+            y = obj.POSITION(2);
             center = [x y 0 0];
             
             switch obj.chirality
@@ -77,9 +83,9 @@ classdef CompassRose < handle
                     assert(false);
             end
             
-            nt = obj.arrow_length(1) .* nt_xyuv ...
+            nt = obj.ARROW_LENGTH(1) .* nt_xyuv ...
                 + center;
-            si = obj.arrow_length(2) .* [0 -0.5 0 1] ...
+            si = obj.ARROW_LENGTH(2) .* [0 -0.5 0 1] ...
                 + center;
             
             xyuv = [nt; si];
@@ -98,11 +104,11 @@ classdef CompassRose < handle
         end
         
         function xy_ntsi = compute_label_xy(obj)
-            x = obj.position(1);
-            y = obj.position(2);
-            u = 0.5 .* obj.arrow_length(1);
-            v = 0.5 .* obj.arrow_length(2);
-            n = obj.label_nudge; % nudge
+            x = obj.POSITION(1);
+            y = obj.POSITION(2);
+            u = 0.5 .* obj.ARROW_LENGTH(1);
+            v = 0.5 .* obj.ARROW_LENGTH(2);
+            n = obj.LABEL_NUDGE; % nudge
             
             x_pos = x + u + n;
             x_neg = x - u - n;

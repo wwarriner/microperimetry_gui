@@ -1,41 +1,37 @@
 classdef EtdrsGrid < handle
+    %{
+    Units are in MM, apply to MM axes.
+    %}
+    
     properties
         chirality (1,1) string = Definitions.OD_CHIRALITY
-        
-        step_size (1,1) uint64 {mustBePositive} = 1000
-        center (1,2) double {mustBeReal,mustBeFinite} = [0 0]
-        scale (1,1) double {mustBeReal,mustBeFinite,mustBePositive} = 1.0
-        
-        edge_color (1,3) double {mustBeReal,mustBeFinite,mustBeNonnegative,mustBeLessThanOrEqual(edge_color, 1.0)} = EtdrsGrid.EDGE_GRAY
-        face_color (1,3) double {mustBeReal,mustBeFinite,mustBeNonnegative,mustBeLessThanOrEqual(face_color, 1.0)} = EtdrsGrid.FACE_GRAY
     end
     
     methods
-        function apply(obj, axh)
-            is_held = ishold(axh);
-            hold(axh, "on");
+        function obj = EtdrsGrid(parent)
+            is_held = ishold(parent);
+            hold(parent, "on");
             
-            obj.draw_circle(axh, obj.center, obj.OUTER_RADIUS, true);
-            obj.draw_circle(axh, obj.center, obj.MIDDLE_RADIUS);
-            obj.draw_circle(axh, obj.center, obj.INNER_RADIUS);
+            obj.draw_circle(parent, obj.CENTER, obj.OUTER_RADIUS, true);
+            obj.draw_circle(parent, obj.CENTER, obj.MIDDLE_RADIUS);
+            obj.draw_circle(parent, obj.CENTER, obj.INNER_RADIUS);
             
             radii = [obj.INNER_RADIUS obj.OUTER_RADIUS];
             for angle = obj.LINE_ANGLES
-                obj.draw_radial_line(axh, angle, radii);
+                obj.draw_radial_line(parent, angle, radii);
             end
             
-            % todo should shift by obj.center
             optic_disk_center = obj.compute_optic_disk_center();
-            ph = obj.draw_circle(axh, optic_disk_center, obj.OPTIC_DISK_RADIUS, true);
+            ph = obj.draw_circle(parent, optic_disk_center, obj.OPTIC_DISK_RADIUS, true);
             ph.EdgeColor = obj.OPTIC_DISK_EDGE_GRAY;
             ph.FaceColor = obj.OPTIC_DISK_FACE_GRAY;
             
             if ~is_held
-                hold(axh, "off");
+                hold(parent, "off");
             end
             
             obj.optic_disk = ph;
-            obj.update();
+            obj.parent = parent;
         end
         
         function update(obj)
@@ -47,10 +43,15 @@ classdef EtdrsGrid < handle
     end
     
     properties (Access = private)
+        parent
         optic_disk
     end
     
     properties (Access = private, Constant)
+        STEP_SIZE (1,1) uint64 {mustBePositive} = 1000
+        CENTER (1,2) double {mustBeReal,mustBeFinite} = [0 0]
+        SCALE (1,1) double {mustBeReal,mustBeFinite,mustBePositive} = 1.0
+        
         INNER_RADIUS = 0.5
         MIDDLE_RADIUS = 1.5
         OUTER_RADIUS = 3.0
@@ -73,16 +74,16 @@ classdef EtdrsGrid < handle
             end
             
             xy = obj.compute_circle_points(center, radius);
-            ph = patch(axh, xy(:, 1), xy(:, 2), obj.face_color);
-            ph.EdgeColor = obj.edge_color;
-            ph.FaceColor = obj.face_color;
+            ph = patch(axh, xy(:, 1), xy(:, 2), obj.FACE_GRAY);
+            ph.EdgeColor = obj.EDGE_GRAY;
+            ph.FaceColor = obj.FACE_GRAY;
             if ~filled
                 ph.FaceAlpha = 0.0;
             end
         end
         
         function xy = compute_circle_points(obj, center, radius)
-            t = linspace(-pi, pi, obj.step_size).';
+            t = linspace(-pi, pi, obj.STEP_SIZE).';
             x = obj.scale_radius(radius .* cos(t)) + center(1);
             y = obj.scale_radius(radius .* sin(t)) + center(2);
             xy = [x y];
@@ -98,18 +99,18 @@ classdef EtdrsGrid < handle
                 otherwise
                     assert(false)
             end
-            xy = obj.center + c;
+            xy = obj.CENTER + c;
         end
         
         function ph = draw_radial_line(obj, axh, angle, radii)
             x = obj.scale_radius(radii .* cos(angle));
             y = obj.scale_radius(radii .* sin(angle));
             ph = plot(axh, x, y);
-            ph.Color = obj.edge_color;
+            ph.Color = obj.EDGE_GRAY;
         end
         
         function scaled = scale_radius(obj, radius)
-            scaled = obj.scale .* radius;
+            scaled = obj.SCALE .* radius;
         end
     end
 end

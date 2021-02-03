@@ -1,32 +1,30 @@
 classdef LayoutInfo < handle
-    properties % TODO make private
+    properties
+        row_vision_types (1,2) string
         column_styles (1,3) string
         column_keywords (1,3) string
         column_data_sources (1,3) string
         lookup_class (1,1) string
         lookup_title (1,1) string
+        is_available_fn (1,1) function_handle = @(data)false
     end
     
     properties (Dependent, SetAccess = private)
-        lookup_items (1,1) string
+        available (1,1) logical
+    end
+    
+    properties (Constant)
+        ROW_COUNT = 2
+        COLUMN_COUNT = 3
     end
     
     methods
         function obj = LayoutInfo(data)
             obj.data = data;
         end
-    end
-    
-    methods % accessors
-        function value = get.lookup_items(obj)
-            switch obj.lookup_class
-                case Definitions.INDIVIDUAL
-                    value = obj.data.individuals;
-                case Definitions.GROUP_MEANS
-                    value = obj.data.classes;
-                otherwise
-                    assert(false);
-            end
+        
+        function value = get.available(obj)
+            value = obj.is_available_fn(obj.data);
         end
     end
     

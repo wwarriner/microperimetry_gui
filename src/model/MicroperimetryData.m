@@ -1,15 +1,11 @@
 classdef MicroperimetryData < handle
-    properties
-        chirality (1,1) string = Definitions.OD_CHIRALITY
-    end
-    
-    properties (SetAccess = private)
-        classes (:,1) string
-        individuals (:,1) string
-    end
-    
-    properties (SetAccess = private, Dependent)
+    properties (Dependent, SetAccess = private)
         ready (1,1) logical
+    end
+    
+    properties (Constant)
+        CLASSES_LOOKUP = Definitions.INDIVIDUAL;
+        INDIVIDUALS_LOOKUP = Definitions.GROUP_MEANS;
     end
     
     methods
@@ -34,6 +30,11 @@ classdef MicroperimetryData < handle
             group_means_classes = unique(t(t.keyword == Definitions.GROUP_MEANS, :).class);
             assert(all(intersect(z_score_classes, group_means_classes) == z_score_classes));
             class_names = unique(classes_base, "stable");
+            
+            looks = containers.Map(...
+                {char(obj.CLASSES_LOOKUP), char(obj.INDIVIDUALS_LOOKUP)}, ...
+                {class_names, individual_names} ...
+                );
             
             w = width(t);
             labels = {};
@@ -63,14 +64,21 @@ classdef MicroperimetryData < handle
             end
             
             obj.data = t;
-            obj.individuals = individual_names;
-            obj.classes = class_names;
+            obj.lookups = looks;
             obj.mesopic = meso;
             obj.scotopic = scoto;
         end
         
         function value = has_individuals(obj)
-            value = ~isempty(obj.individuals);
+            if ~obj.ready
+                value = false;
+            else
+                value = ~isempty(obj.lookups(char(obj.INDIVIDUALS_LOOKUP)));
+            end
+        end
+        
+        function value = get_lookup_items(obj, tag)
+            value = obj.lookups(char(tag));
         end
         
         function values = get_class_values(obj, varargin)
@@ -81,6 +89,7 @@ classdef MicroperimetryData < handle
             2) "vision_type" - string
             3) "lookup_type" - string (individual, group_means)
             4) "lookup_value" - string
+            5) "chirality" - string (OD, OS)
             
             NOTE: "class" and "individual" are mutually exclusive
             %}
@@ -90,12 +99,14 @@ classdef MicroperimetryData < handle
             p.addParameter(Definitions.VISION_TYPE, []);
             p.addParameter(Definitions.LOOKUP_TYPE, []);
             p.addParameter(Definitions.LOOKUP_VALUE, []);
+            p.addParameter(Definitions.CHIRALITY, []);
             p.parse(varargin{:});
             
             keyword = p.Results.(Definitions.KEYWORD);
             vision_type = p.Results.(Definitions.VISION_TYPE);
             lookup_type = p.Results.(Definitions.LOOKUP_TYPE);
             lookup_value = p.Results.(Definitions.LOOKUP_VALUE);
+            chirality = p.Results.(Definitions.CHIRALITY);
             
             assert(~isempty(keyword));
             assert(isstring(keyword));
@@ -112,6 +123,10 @@ classdef MicroperimetryData < handle
             assert(~isempty(lookup_value));
             assert(isstring(lookup_value));
             assert(isscalar(lookup_value));
+            
+            assert(~isempty(chirality));
+            assert(isstring(chirality));
+            assert(isscalar(chirality));
             
             v = obj.data;
             indices = v.keyword == keyword;
@@ -135,35 +150,20 @@ classdef MicroperimetryData < handle
                     assert(false);
             end
             assert(~isempty(value));
-            values.x = obj.get_x(vision_type);
-            values.y = obj.get_y(vision_type);
+            
             values.v = obj.coordinates.limit_to_used(value.', vision_type);
-        end
-        
-        function value = get_x(obj, vision_type)
-            switch obj.chirality
-                case Definitions.OD_CHIRALITY
-                    value = obj.coordinates.get_x(vision_type);
-                case Definitions.OS_CHIRALITY
-                    value = -obj.coordinates.get_x(vision_type);
-                otherwise
-                    assert(false);
-            end
-        end
-        
-        function value = get_y(obj, vision_type)
-            value = obj.coordinates.get_y(vision_type);
         end
     end
         
     methods % accessors
         function value = get.ready(obj)
-            value = (~isempty(obj.classes) || ~isempty(obj.classes));
+            value = ~isempty(obj.data);
         end
     end
     
     properties (Access = private)
         data table
+        lookups containers.Map
         coordinates Coordinates
         mesopic (:,:) double
         scotopic (:,:) double
