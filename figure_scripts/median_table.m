@@ -18,7 +18,6 @@ data.vision(data.vision == "cs") = "Scotopic";
 data.index = str2double(strrep(data.position, "b", ""));
 
 data.info = [];
-data.data_type = [];
 data.position = [];
 
 coords = readtable(coordinates_file_path);
