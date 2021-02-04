@@ -9,7 +9,7 @@ classdef Definitions
         SCOTOPIC = "scotopic"
         
         SENSITIVITY_UNITS = "dB"
-        SENSITIVITY_TICKS = 0 : 4 : 28
+        SENSITIVITY_TICKS = 0 : 5 : 30
         SENSITIVITY_DATA_RANGE = [Definitions.SENSITIVITY_TICKS(1) Definitions.SENSITIVITY_TICKS(end)]
         
         Z_SCORE_TICKS = -3 : 1 : 3
