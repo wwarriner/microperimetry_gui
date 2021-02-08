@@ -4,7 +4,7 @@ classdef EtdrsGrid < handle
     %}
     
     properties
-        chirality (1,1) string = Definitions.OD_CHIRALITY
+        laterality (1,1) string = Definitions.OD_LATERALITY
     end
     
     methods
@@ -91,11 +91,11 @@ classdef EtdrsGrid < handle
         
         function xy = compute_optic_disk_center(obj)
             c = obj.OPTIC_DISK_CENTER_OFFSET;
-            switch obj.chirality
-                case Definitions.OD_CHIRALITY
-                    % noop
-                case Definitions.OS_CHIRALITY
+            switch obj.laterality
+                case Definitions.OD_LATERALITY
                     c(1) = -c(1);
+                case Definitions.OS_LATERALITY
+                    % noop
                 otherwise
                     assert(false)
             end
@@ -114,4 +114,3 @@ classdef EtdrsGrid < handle
         end
     end
 end
-

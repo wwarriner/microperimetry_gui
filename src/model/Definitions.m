@@ -1,8 +1,8 @@
 classdef Definitions
     properties (Constant)
-        CHIRALITY = "chirality"
-        OD_CHIRALITY = "od"
-        OS_CHIRALITY = "os"
+        LATERALITY = "laterality"
+        OD_LATERALITY = "od"
+        OS_LATERALITY = "os"
         
         VISION_TYPE = "vision_type"
         MESOPIC = "mesopic"

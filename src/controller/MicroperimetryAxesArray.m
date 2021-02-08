@@ -1,6 +1,6 @@
 classdef MicroperimetryAxesArray < AxesArray
     properties
-        chirality (1,1) string % update_chirality()
+        laterality (1,1) string % update_laterality()
         left_class (1,1) string % update_values()
         left_data_type (1,1) string % update_values()
         center_class (1,1) string % update_values()
@@ -24,8 +24,8 @@ classdef MicroperimetryAxesArray < AxesArray
                 );
         end
         
-        function update_chirality(obj)
-            obj.apply(@(ax,r,c)obj.update_axes_chirality(ax, r, c));
+        function update_laterality(obj)
+            obj.apply(@(ax,r,c)obj.update_axes_laterality(ax, r, c));
         end
         
         function update_values(obj)
@@ -38,9 +38,9 @@ classdef MicroperimetryAxesArray < AxesArray
     end
     
     methods (Access = private)
-        function update_axes_chirality(obj, ax, ~, ~)
-            ax.chirality = obj.chirality;
-            ax.update_chirality();
+        function update_axes_laterality(obj, ax, ~, ~)
+            ax.laterality = obj.laterality;
+            ax.update_laterality();
         end
         
         function update_axes_values(obj, ax, row, col)

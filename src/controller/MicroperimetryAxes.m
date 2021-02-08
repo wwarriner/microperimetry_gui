@@ -1,6 +1,6 @@
 classdef MicroperimetryAxes < Axes
     properties
-        chirality (1,1) string % update_coordinates(), update_chirality()
+        laterality (1,1) string % update_coordinates(), update_laterality()
         vision (1,1) string % update_coordinates(), update_values()
         class (1,1) string % update_values()
         data_type (1,1) string % update_values()
@@ -99,10 +99,10 @@ classdef MicroperimetryAxes < Axes
             obj.scatter.update();
         end
         
-        function update_chirality(obj)
+        function update_laterality(obj)
             for key = obj.features.keys()
                 feature = obj.features(char(key));
-                feature.chirality = obj.chirality;
+                feature.laterality = obj.laterality;
                 feature.update();
             end
             if obj.data.empty

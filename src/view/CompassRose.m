@@ -4,7 +4,7 @@ classdef CompassRose < handle
     %}
     
     properties
-        chirality (1,1) string = Definitions.OD_CHIRALITY
+        laterality (1,1) string = Definitions.OD_LATERALITY
         
         font_name (1,1) string = "arial"
         font_size (1,1) double = 10
@@ -78,11 +78,11 @@ classdef CompassRose < handle
             y = obj.POSITION(2);
             center = [x y 0 0];
             
-            switch obj.chirality
-                case Definitions.OD_CHIRALITY
-                    nt_xyuv = [-0.5 0 1 0];
-                case Definitions.OS_CHIRALITY
+            switch obj.laterality
+                case Definitions.OD_LATERALITY
                     nt_xyuv = [0.5 0 -1 0];
+                case Definitions.OS_LATERALITY
+                    nt_xyuv = [-0.5 0 1 0];
                 otherwise
                     assert(false);
             end
@@ -116,13 +116,13 @@ classdef CompassRose < handle
             
             x_pos = x + u + n;
             x_neg = x - u - n;
-            switch obj.chirality
-                case Definitions.OD_CHIRALITY
-                    nx = x_neg;
-                    tx = x_pos;
-                case Definitions.OS_CHIRALITY
+            switch obj.laterality
+                case Definitions.OD_LATERALITY
                     nx = x_pos;
                     tx = x_neg;
+                case Definitions.OS_LATERALITY
+                    nx = x_neg;
+                    tx = x_pos;
                 otherwise
                     assert(false);
             end

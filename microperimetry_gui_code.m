@@ -4,7 +4,7 @@ classdef microperimetry_gui < matlab.apps.AppBase
     properties (Access = public)
         UIFigure                 matlab.ui.Figure
         OptionsPanel             matlab.ui.container.Panel
-        EyeSideButtonGroup       matlab.ui.container.ButtonGroup
+        LateralityButtonGroup    matlab.ui.container.ButtonGroup
         ODButton                 matlab.ui.control.ToggleButton
         OSButton                 matlab.ui.control.ToggleButton
         LoadDataButton           matlab.ui.control.Button
@@ -208,27 +208,28 @@ classdef microperimetry_gui < matlab.apps.AppBase
                 end
             end
             
-            app.ODButton.Tag = Definitions.OD_CHIRALITY;
-            app.OSButton.Tag = Definitions.OS_CHIRALITY;
+            app.ODButton.Tag = Definitions.OD_LATERALITY;
+            app.OSButton.Tag = Definitions.OS_LATERALITY;
+            app.LateralityButtonGroup.SelectedObject = app.OSButton;
             
             app.data = d;
             app.axes = ax_array;
             
-            ax_array.chirality = string(app.EyeSideButtonGroup.SelectedObject.Tag);
+            ax_array.laterality = string(app.LateralityButtonGroup.SelectedObject.Tag);
             ax_array.labels_visible = lower(string(app.ValueDisplaySwitch.Value));
             
             app.update_trees();
             app.axes.update_layout();
-            app.axes.update_chirality();
+            app.axes.update_laterality();
             app.axes.update_values();
             app.axes.update_label_visibility();
         end
         
-        % Selection changed function: EyeSideButtonGroup
-        function EyeSideButtonGroupSelectionChanged(app, event)
-            selectedButton = app.EyeSideButtonGroup.SelectedObject;
-            app.axes.chirality = selectedButton.Tag;
-            app.axes.update_chirality();
+        % Selection changed function: LateralityButtonGroup
+        function LateralityButtonGroupSelectionChanged(app, event)
+            selectedButton = app.LateralityButtonGroup.SelectedObject;
+            app.axes.laterality = selectedButton.Tag;
+            app.axes.update_laterality();
         end
         
         % Button pushed function: LoadDataButton
@@ -369,23 +370,23 @@ classdef microperimetry_gui < matlab.apps.AppBase
             app.OptionsPanel.FontSize = 14;
             app.OptionsPanel.Position = [1 1 180 840];
             
-            % Create EyeSideButtonGroup
-            app.EyeSideButtonGroup = uibuttongroup(app.OptionsPanel);
-            app.EyeSideButtonGroup.AutoResizeChildren = 'off';
-            app.EyeSideButtonGroup.SelectionChangedFcn = createCallbackFcn(app, @EyeSideButtonGroupSelectionChanged, true);
-            app.EyeSideButtonGroup.Title = 'Eye Side';
-            app.EyeSideButtonGroup.FontSize = 14;
-            app.EyeSideButtonGroup.Position = [11 258 158 80];
+            % Create LateralityButtonGroup
+            app.LateralityButtonGroup = uibuttongroup(app.OptionsPanel);
+            app.LateralityButtonGroup.AutoResizeChildren = 'off';
+            app.LateralityButtonGroup.SelectionChangedFcn = createCallbackFcn(app, @LateralityButtonGroupSelectionChanged, true);
+            app.LateralityButtonGroup.Title = 'Eye Side';
+            app.LateralityButtonGroup.FontSize = 14;
+            app.LateralityButtonGroup.Position = [11 258 158 80];
             
             % Create ODButton
-            app.ODButton = uitogglebutton(app.EyeSideButtonGroup);
+            app.ODButton = uitogglebutton(app.LateralityButtonGroup);
             app.ODButton.Text = 'OD';
             app.ODButton.FontSize = 14;
             app.ODButton.Position = [11 8 69 40];
             app.ODButton.Value = true;
             
             % Create OSButton
-            app.OSButton = uitogglebutton(app.EyeSideButtonGroup);
+            app.OSButton = uitogglebutton(app.LateralityButtonGroup);
             app.OSButton.Text = 'OS';
             app.OSButton.FontSize = 14;
             app.OSButton.Position = [80 8 69 40];
