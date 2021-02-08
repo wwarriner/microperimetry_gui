@@ -1,8 +1,12 @@
 classdef Definitions
     properties (Constant)
         LATERALITY = "laterality"
-        OD_LATERALITY = "od"
-        OS_LATERALITY = "os"
+        OD_LATERALITY_VALUE = "od"
+        OS_LATERALITY_VALUE = "os"
+        DEFAULT_LATERALITY_VALUE = "os"
+        FROM_DATA_LATERALITY = "from_data"
+        IMPOSE_OD_LATERALITY = "impose_od"
+        IMPOSE_OS_LATERALITY = "impose_os"
         
         VISION_TYPE = "vision_type"
         MESOPIC = "mesopic"

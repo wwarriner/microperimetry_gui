@@ -45,9 +45,9 @@ classdef LabeledScatter < handle
             else
                 label_request = obj.REBUILD_UPDATE;
             end
-            obj.x = value;
             obj.make_request(label_request);
             obj.make_request(obj.SCATTER_UPDATE);
+            obj.x = value;
         end
         
         function set.y(obj, value)
@@ -56,9 +56,9 @@ classdef LabeledScatter < handle
             else
                 label_request = obj.REBUILD_UPDATE;
             end
-            obj.y = value;
             obj.make_request(label_request);
             obj.make_request(obj.SCATTER_UPDATE);
+            obj.y = value;
         end
         
         function set.v(obj, value)
@@ -67,19 +67,19 @@ classdef LabeledScatter < handle
             else
                 label_request = obj.REBUILD_UPDATE;
             end
-            obj.v = value;
             obj.make_request(label_request);
             obj.make_request(obj.SCATTER_UPDATE);
+            obj.v = value;
         end
         
         function set.size_data(obj, value)
-            obj.size_data = value;
             obj.make_request(obj.SCATTER_UPDATE);
+            obj.size_data = value;
         end
         
         function set.labels_visible(obj, value)
-            obj.labels_visible = value;
             obj.make_request(obj.LABEL_VISIBILITY_UPDATE);
+            obj.labels_visible = value;
         end
     end
     
@@ -100,7 +100,7 @@ classdef LabeledScatter < handle
         REBUILD_UPDATE = 4
     end
     
-    methods
+    methods (Access = private)
         function make_request(obj, proposed_state)
             obj.update_request = max(obj.update_request, proposed_state);
         end

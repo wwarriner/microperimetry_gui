@@ -5,8 +5,9 @@ classdef microperimetry_gui < matlab.apps.AppBase
         UIFigure                 matlab.ui.Figure
         OptionsPanel             matlab.ui.container.Panel
         LateralityButtonGroup    matlab.ui.container.ButtonGroup
-        ODButton                 matlab.ui.control.ToggleButton
-        OSButton                 matlab.ui.control.ToggleButton
+        FromDataButton           matlab.ui.control.ToggleButton
+        ImposeODButton           matlab.ui.control.ToggleButton
+        ImposeOSButton           matlab.ui.control.ToggleButton
         LoadDataButton           matlab.ui.control.Button
         ValueDisplaySwitchLabel  matlab.ui.control.Label
         ValueDisplaySwitch       matlab.ui.control.Switch
@@ -203,33 +204,32 @@ classdef microperimetry_gui < matlab.apps.AppBase
                         rose = ax.apply_to_mm_axes(@CompassRose);
                         ax.register_feature("rose", rose);
                     end
-                    ax.update_appearance();
+                    ax.labels_visible = lower(string(app.ValueDisplaySwitch.Value));
+                    ax.update();
                     ax_array.set_axes(ax, row, col);
                 end
             end
             
-            app.ODButton.Tag = Definitions.OD_LATERALITY;
-            app.OSButton.Tag = Definitions.OS_LATERALITY;
-            app.LateralityButtonGroup.SelectedObject = app.OSButton;
+            app.FromDataButton.Tag = Definitions.FROM_DATA_LATERALITY;
+            app.ImposeODButton.Tag = Definitions.IMPOSE_OD_LATERALITY;
+            app.ImposeOSButton.Tag = Definitions.IMPOSE_OS_LATERALITY;
+            app.LateralityButtonGroup.SelectedObject = app.FromDataButton;
+            ax_array.laterality = string(app.LateralityButtonGroup.SelectedObject.Tag);
+            
+            ax_array.labels_visible = lower(string(app.ValueDisplaySwitch.Value));
             
             app.data = d;
             app.axes = ax_array;
             
-            ax_array.laterality = string(app.LateralityButtonGroup.SelectedObject.Tag);
-            ax_array.labels_visible = lower(string(app.ValueDisplaySwitch.Value));
-            
             app.update_trees();
             app.axes.update_layout();
-            app.axes.update_laterality();
-            app.axes.update_values();
-            app.axes.update_label_visibility();
         end
         
         % Selection changed function: LateralityButtonGroup
         function LateralityButtonGroupSelectionChanged(app, event)
             selectedButton = app.LateralityButtonGroup.SelectedObject;
             app.axes.laterality = selectedButton.Tag;
-            app.axes.update_laterality();
+            app.axes.update();
         end
         
         % Button pushed function: LoadDataButton
@@ -247,56 +247,63 @@ classdef microperimetry_gui < matlab.apps.AppBase
             end
             
             app.update_trees();
-            app.axes.update_values();
+            app.axes.update();
         end
         
         % Value changed function: ValueDisplaySwitch
         function ValueDisplaySwitchValueChanged(app, event)
             app.axes.labels_visible = lower(string(app.ValueDisplaySwitch.Value));
-            app.axes.update_label_visibility();
+            app.axes.update();
         end
         
         % Button pushed function: SaveFigureAsButton
         function SaveFigureAsButtonPushed(app, event)
+            DEFAULT_NAME = "microperimetry_figure";
             PNG_FILTER = "*.png";
             PDF_FILTER = "*.pdf";
             EPS_FILTER = "*.eps";
             TEX_FILTER = "*.tex";
             filters = [PNG_FILTER; PDF_FILTER; EPS_FILTER; TEX_FILTER];
-            default_name = sprintf("microperimetry_figure_pt%d_eye%d", app.data.id, app.data.eye);
-            [file, path, index] = uiputfile(filters, "Save figure as...", default_name);
+            [file, path, index] = uiputfile(filters, "Save figure as", DEFAULT_NAME);
             if file == 0
                 return;
             end
+            
+            progress_dlg = uiprogressdlg(app.UIFigure);
+            progress_dlg.Title = "Saving figure";
+            progress_dlg.Message = "Please wait while you figure is saved.";
+            progress_dlg.Indeterminate = "on";
+            progress_dlg.Cancelable = "off";
+            progress_dlg_closer = onCleanup(@()delete(progress_dlg));
+            
+            [~, ~, ext] = fileparts(file);
+            if ext == ""
+                file = file + filters(1);
+            end
+            
             path = fullfile(path, file);
             
-            fh = figure();
-            fh.Color = "w";
-            closer = onCleanup(@()close(fh));
-            fh.Visible = "off";
-            fh.Position = app.DisplayPanel.Position();
-            ax = MicroperimetryAxesArray(fh, app.data);
-            ax.row_titles = app.axes.row_titles;
-            ax.layout = app.axes.layout;
-            ax.build();
-            ax.label_visibility_state = string(app.ValueDisplaySwitch.Value);
-            ax.update();
-            handle = fh;
+            figure_handle = figure();
+            figure_handle.Visible = "off";
+            figure_handle.Position(3:4) = app.DisplayPanel.Position(3:4);
+            app.axes.transplant(figure_handle);
+            cleanup = onCleanup(@()app.axes.transplant(app.DisplayPanel));
             
             try
                 switch filters(index)
                     case PNG_FILTER
-                        export_fig(path, handle);
+                        export_fig(path, figure_handle);
                     case PDF_FILTER
-                        export_fig(path, '-nofontswap', handle);
+                        export_fig(path, '-nofontswap', figure_handle);
                     case EPS_FILTER
-                        export_fig(path, handle);
+                        export_fig(path, figure_handle);
                     case TEX_FILTER
-                        matlab2tikz(char(path), char("figurehandle"), handle)
+                        matlab2tikz(char(path), char("figurehandle"), figure_handle)
                     otherwise
                         assert(false);
                 end
             catch e
+                delete(progress_dlg_closer);
                 uialert(app.UIFigure, e.message, "Error saving figure");
             end
         end
@@ -314,7 +321,7 @@ classdef microperimetry_gui < matlab.apps.AppBase
             
             app.axes.left_class = selectedNodes.Parent.Text;
             app.axes.left_data_type = selectedNodes.Text;
-            app.axes.update_values();
+            app.axes.update();
         end
         
         % Selection changed function: CenterColumnTree
@@ -330,7 +337,7 @@ classdef microperimetry_gui < matlab.apps.AppBase
             
             app.axes.center_class = selectedNodes.Parent.Text;
             app.axes.center_data_type = selectedNodes.Text;
-            app.axes.update_values();
+            app.axes.update();
         end
         
         % Selection changed function: RightColumnTree
@@ -346,7 +353,7 @@ classdef microperimetry_gui < matlab.apps.AppBase
             
             app.axes.right_class = selectedNodes.Parent.Text;
             app.axes.right_data_type = selectedNodes.Text;
-            app.axes.update_values();
+            app.axes.update();
         end
     end
     
@@ -374,22 +381,28 @@ classdef microperimetry_gui < matlab.apps.AppBase
             app.LateralityButtonGroup = uibuttongroup(app.OptionsPanel);
             app.LateralityButtonGroup.AutoResizeChildren = 'off';
             app.LateralityButtonGroup.SelectionChangedFcn = createCallbackFcn(app, @LateralityButtonGroupSelectionChanged, true);
-            app.LateralityButtonGroup.Title = 'Eye Side';
+            app.LateralityButtonGroup.Title = 'Laterality';
             app.LateralityButtonGroup.FontSize = 14;
-            app.LateralityButtonGroup.Position = [11 258 158 80];
+            app.LateralityButtonGroup.Position = [11 178 158 160];
             
-            % Create ODButton
-            app.ODButton = uitogglebutton(app.LateralityButtonGroup);
-            app.ODButton.Text = 'OD';
-            app.ODButton.FontSize = 14;
-            app.ODButton.Position = [11 8 69 40];
-            app.ODButton.Value = true;
+            % Create FromDataButton
+            app.FromDataButton = uitogglebutton(app.LateralityButtonGroup);
+            app.FromDataButton.Text = 'From Data';
+            app.FromDataButton.FontSize = 14;
+            app.FromDataButton.Position = [9 89 140 40];
+            app.FromDataButton.Value = true;
             
-            % Create OSButton
-            app.OSButton = uitogglebutton(app.LateralityButtonGroup);
-            app.OSButton.Text = 'OS';
-            app.OSButton.FontSize = 14;
-            app.OSButton.Position = [80 8 69 40];
+            % Create ImposeODButton
+            app.ImposeODButton = uitogglebutton(app.LateralityButtonGroup);
+            app.ImposeODButton.Text = 'Impose OD';
+            app.ImposeODButton.FontSize = 14;
+            app.ImposeODButton.Position = [9 49 140 40];
+            
+            % Create ImposeOSButton
+            app.ImposeOSButton = uitogglebutton(app.LateralityButtonGroup);
+            app.ImposeOSButton.Text = 'Impose OS';
+            app.ImposeOSButton.FontSize = 14;
+            app.ImposeOSButton.Position = [9 9 140 40];
             
             % Create LoadDataButton
             app.LoadDataButton = uibutton(app.OptionsPanel, 'push');
@@ -402,20 +415,20 @@ classdef microperimetry_gui < matlab.apps.AppBase
             app.ValueDisplaySwitchLabel = uilabel(app.OptionsPanel);
             app.ValueDisplaySwitchLabel.HorizontalAlignment = 'center';
             app.ValueDisplaySwitchLabel.FontSize = 14;
-            app.ValueDisplaySwitchLabel.Position = [42 226 90 22];
+            app.ValueDisplaySwitchLabel.Position = [42 146 90 22];
             app.ValueDisplaySwitchLabel.Text = 'Value Display';
             
             % Create ValueDisplaySwitch
             app.ValueDisplaySwitch = uiswitch(app.OptionsPanel, 'slider');
             app.ValueDisplaySwitch.ValueChangedFcn = createCallbackFcn(app, @ValueDisplaySwitchValueChanged, true);
             app.ValueDisplaySwitch.FontSize = 14;
-            app.ValueDisplaySwitch.Position = [55 189 64 28];
+            app.ValueDisplaySwitch.Position = [55 109 64 28];
             
             % Create SaveFigureAsButton
             app.SaveFigureAsButton = uibutton(app.OptionsPanel, 'push');
             app.SaveFigureAsButton.ButtonPushedFcn = createCallbackFcn(app, @SaveFigureAsButtonPushed, true);
             app.SaveFigureAsButton.FontSize = 14;
-            app.SaveFigureAsButton.Position = [11 8 158 40];
+            app.SaveFigureAsButton.Position = [11 18 158 40];
             app.SaveFigureAsButton.Text = 'Save figure...';
             
             % Create LeftColumnSourceLabel

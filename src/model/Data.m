@@ -15,6 +15,9 @@ classdef Data < handle
         - X coordinate position on the retina in degrees
     - y (double)
         - Y coordinate position on the retina in degrees
+    - laterality
+        - eye laterality
+        - must be one of "os" or "od"
     %}
     
     properties (SetAccess = private)
@@ -47,11 +50,17 @@ classdef Data < handle
             assert(isa(in_t.value, "double"));
             assert(isa(in_t.x, "double"));
             assert(isa(in_t.y, "double"));
+            assert(isstring(in_t.laterality));
             
             included = lower(unique(in_t.vision));
             expected = [Definitions.MESOPIC, Definitions.SCOTOPIC];
             assert(isempty(setdiff(included, expected)));
             assert(isempty(setdiff(expected, included)));
+            
+            in_t.laterality = lower(in_t.laterality);
+            included = lower(unique(in_t.laterality));
+            expected = [Definitions.OD_LATERALITY_VALUE, Definitions.OS_LATERALITY_VALUE];
+            assert(all(ismember(included, expected)));
             
             obj.t = in_t;
         end
@@ -80,7 +89,7 @@ classdef Data < handle
     end
     
     properties (Access = private, Constant)
-        COLUMNS = ["vision", "class", "data_type", "value", "x", "y"]
+        COLUMNS = ["vision", "class", "data_type", "value", "x", "y", "laterality"]
     end
 end
 

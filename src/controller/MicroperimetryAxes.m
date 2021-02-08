@@ -1,7 +1,7 @@
 classdef MicroperimetryAxes < Axes
     properties
-        laterality (1,1) string % update_coordinates(), update_laterality()
-        vision (1,1) string % update_coordinates(), update_values()
+        laterality (1,1) string % update_laterality()
+        vision (1,1) string % update_values()
         class (1,1) string % update_values()
         data_type (1,1) string % update_values()
         labels_visible (1,1) string % {"off", "on"}, update_label_visibility()
@@ -35,11 +35,13 @@ classdef MicroperimetryAxes < Axes
         
         function set_degrees_format(obj, format)
             assert(isa(format, "AxesFormat"));
+            obj.make_request(obj.FORMAT_UPDATE);
             obj.degrees_format = format;
         end
         
         function set_mm_format(obj, format)
             assert(isa(format, "AxesFormat"));
+            obj.make_request(obj.FORMAT_UPDATE);
             obj.mm_format = format;
         end
         
@@ -51,14 +53,145 @@ classdef MicroperimetryAxes < Axes
         end
         
         function update(obj)
-            obj.update_coordinates();
-            obj.update_values();
-            obj.update_features();
-            obj.update_label_visibility();
-            obj.update_appearance();
+            req = obj.update_request;
+            req = unique(req);
+            if isempty(req)
+                return;
+            end
+            
+            if ismember(obj.APPEARANCE_UPDATE, req)
+                obj.update_appearance();
+            end
+            if ismember(obj.FORMAT_UPDATE, req)
+                obj.update_format();
+            end
+            
+            if obj.data.empty
+                return;
+            end
+            
+            if ismember(obj.LATERALITY_UPDATE, req)
+                obj.update_feature_laterality();
+            end
+            
+            refresh_values = [...
+                obj.LATERALITY_UPDATE ...
+                obj.VALUE_UPDATE ...
+                ];
+            if any(ismember(refresh_values, req))
+                v = obj.get_values();
+                selected_laterality_value = obj.select_laterality_value();
+                v = obj.adjust_laterality_of_values(v, selected_laterality_value);
+                obj.values = v;
+                obj.update_values();
+            end
+            
+            obj.reset_request();
+        end
+    end
+    
+    methods % accessors
+        function set.laterality(obj, value)
+            if value ~= obj.laterality
+                obj.make_request(obj.LATERALITY_UPDATE);
+            end
+            obj.laterality = value;
+        end
+        
+        function set.vision(obj, value)
+            if value ~= obj.vision
+                obj.make_request(obj.VALUE_UPDATE);
+                obj.make_request(obj.FORMAT_UPDATE);
+            end
+            obj.vision = value;
+        end
+        
+        function set.class(obj, value)
+            if value ~= obj.class
+                obj.make_request(obj.VALUE_UPDATE);
+                obj.make_request(obj.FORMAT_UPDATE);
+            end
+            obj.class = value;
+        end
+        
+        function set.data_type(obj, value)
+            if value ~= obj.data_type
+                obj.make_request(obj.VALUE_UPDATE);
+                obj.make_request(obj.FORMAT_UPDATE);
+            end
+            obj.data_type = value;
+        end
+        
+        function set.labels_visible(obj, value)
+            if value ~= obj.labels_visible
+                obj.make_request(obj.APPEARANCE_UPDATE);
+            end
+            obj.labels_visible = value;
+        end
+        
+        function set.point_size(obj, value)
+            if value ~= obj.point_size
+                obj.make_request(obj.APPEARANCE_UPDATE);
+            end
+            obj.point_size = value;
+        end
+    end
+    
+    properties
+        data Data
+        scatter LabeledScatter
+        degrees_format AxesFormat
+        mm_format AxesFormat
+        location (1,4) logical % top, bottom, left, right
+        features containers.Map
+        
+        values table
+        update_request (:,1) double
+    end
+    
+    properties (Access = private, Constant)
+        APPEARANCE_UPDATE = 1
+        FORMAT_UPDATE = 2
+        LATERALITY_UPDATE = 3
+        VALUE_UPDATE = 4
+    end
+    
+    properties (Access = private, Constant)
+        ECCENTRICITY_DEG = strjoin([init_cap(Definitions.ECCENTRICITY), Definitions.DEGREES_UNITS], ", ");
+        ECCENTRICITY_MM = strjoin([init_cap(Definitions.ECCENTRICITY), Definitions.MM_UNITS], ", ");
+    end
+    
+    methods (Access = private)
+        function make_request(obj, proposed_request)
+            obj.update_request = [obj.update_request; proposed_request];
+        end
+        
+        function reset_request(obj)
+            obj.update_request = [];
         end
         
         function update_values(obj)
+            obj.scatter.v = obj.values.value;
+            obj.scatter.x = obj.values.x;
+            obj.scatter.y = obj.values.y;
+            obj.scatter.update();
+        end
+        
+        function update_appearance(obj)
+            switch lower(obj.labels_visible)
+                case "off"
+                    v = false;
+                case "on"
+                    v = true;
+                otherwise
+                    assert(false);
+            end
+            obj.scatter.labels_visible = v;
+            obj.scatter.size_data = obj.point_size;
+            obj.scatter.update();
+        end
+        
+        function update_format(obj)
             assert(~isempty(obj.degrees_format));
             assert(~isempty(obj.mm_format));
             
@@ -87,69 +220,40 @@ classdef MicroperimetryAxes < Axes
             
             obj.apply_to_degrees_axes(@d.apply);
             obj.apply_to_mm_axes(@m.apply);
-            
-            if obj.data.empty
-                return;
-            end
-            
-            values = obj.get_values();
-            obj.scatter.v = values.value;
-            
-            obj.update_coordinates();
-            obj.scatter.update();
         end
         
-        function update_laterality(obj)
+        function update_feature_laterality(obj)
+            selected_laterality_value = obj.select_laterality_value();
             for key = obj.features.keys()
                 feature = obj.features(char(key));
-                feature.laterality = obj.laterality;
+                feature.laterality = selected_laterality_value;
                 feature.update();
             end
-            if obj.data.empty
-                return;
-            end
-            obj.update_coordinates();
-            obj.scatter.update();
         end
         
-        function update_label_visibility(obj)
-            switch lower(obj.labels_visible)
-                case "off"
-                    v = false;
-                case "on"
-                    v = true;
+        function laterality_value = select_laterality_value(obj)
+            if isempty(obj.values)
+                laterality_value = Definitions.DEFAULT_LATERALITY_VALUE;
+                return;
+            end
+            switch obj.laterality
+                case Definitions.FROM_DATA_LATERALITY
+                    % HACK, collapses multiple values to one
+                    laterality_value = unique(obj.values.laterality);
+                    assert(numel(laterality_value) == 1);
+                case Definitions.IMPOSE_OD_LATERALITY
+                    laterality_value = Definitions.OD_LATERALITY_VALUE;
+                case Definitions.IMPOSE_OS_LATERALITY
+                    laterality_value = Definitions.OS_LATERALITY_VALUE;
                 otherwise
                     assert(false);
             end
-            obj.scatter.labels_visible = v;
-            obj.scatter.update();
         end
         
-        function update_appearance(obj)
-            obj.scatter.size_data = obj.point_size;
-            obj.scatter.update();
-        end
-    end
-    
-    properties
-        data Data
-        scatter LabeledScatter
-        degrees_format AxesFormat
-        mm_format AxesFormat
-        location (1,4) logical % top, bottom, left, right
-        features containers.Map
-    end
-    
-    properties (Access = private, Constant)
-        ECCENTRICITY_DEG = strjoin([init_cap(Definitions.ECCENTRICITY), Definitions.DEGREES_UNITS], ", ");
-        ECCENTRICITY_MM = strjoin([init_cap(Definitions.ECCENTRICITY), Definitions.MM_UNITS], ", ");
-    end
-    
-    methods (Access = private)
-        function update_coordinates(obj)
-            values = obj.get_values();
-            obj.scatter.x = values.x;
-            obj.scatter.y = values.y;
+        function values = adjust_laterality_of_values(~, values, selected_laterality_value)
+            if values.laterality ~= selected_laterality_value
+                values.x = -values.x;
+            end
         end
         
         function values = get_values(obj)

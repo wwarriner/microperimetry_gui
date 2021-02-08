@@ -4,7 +4,7 @@ classdef CompassRose < handle
     %}
     
     properties
-        laterality (1,1) string = Definitions.OD_LATERALITY
+        laterality (1,1) string = Definitions.DEFAULT_LATERALITY_VALUE
         
         font_name (1,1) string = "arial"
         font_size (1,1) double = 10
@@ -79,9 +79,9 @@ classdef CompassRose < handle
             center = [x y 0 0];
             
             switch obj.laterality
-                case Definitions.OD_LATERALITY
+                case Definitions.OD_LATERALITY_VALUE
                     nt_xyuv = [0.5 0 -1 0];
-                case Definitions.OS_LATERALITY
+                case Definitions.OS_LATERALITY_VALUE
                     nt_xyuv = [-0.5 0 1 0];
                 otherwise
                     assert(false);
@@ -117,10 +117,10 @@ classdef CompassRose < handle
             x_pos = x + u + n;
             x_neg = x - u - n;
             switch obj.laterality
-                case Definitions.OD_LATERALITY
+                case Definitions.OD_LATERALITY_VALUE
                     nx = x_pos;
                     tx = x_neg;
-                case Definitions.OS_LATERALITY
+                case Definitions.OS_LATERALITY_VALUE
                     nx = x_neg;
                     tx = x_pos;
                 otherwise

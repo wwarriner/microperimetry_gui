@@ -25,7 +25,7 @@ classdef AxesArray < handle
         function set_right_colorbar(obj, cb)
             cb.location = "east";
             cb.update();
-            obj.left_colorbar = cb;
+            obj.right_colorbar = cb;
         end
         
         function set_axes(obj, ax, row, col)
