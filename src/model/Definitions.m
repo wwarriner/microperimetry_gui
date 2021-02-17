@@ -26,7 +26,7 @@ classdef Definitions
         DEGREES_TICK_LABEL = abs(Definitions.DEGREES_TICK)
         
         MM_UNITS = "mm"
-        MM_PER_DEG = 0.288
+        MM_PER_DEG = 0.288 + 1e-6 % adjustment to get axes to line up
         MM_LIM = Definitions.MM_PER_DEG .* Definitions.DEGREES_LIM
         MM_TICK_LIM = [-4 4]
         MM_TICK_STEP = 1

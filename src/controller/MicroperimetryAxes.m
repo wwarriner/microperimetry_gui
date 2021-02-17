@@ -17,7 +17,8 @@ classdef MicroperimetryAxes < Axes
     
     methods
         function obj = MicroperimetryAxes(parent, data, location)
-            obj = obj@Axes(parent);
+            obj = obj@DualUnitAxes(parent);
+            obj.primary_to_secondary_scale = Definitions.MM_PER_DEG;
             scatter = obj.apply_to_degrees_axes(@LabeledScatter);
             obj.scatter = scatter;
             obj.data = data;

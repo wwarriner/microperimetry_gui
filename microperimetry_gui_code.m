@@ -286,8 +286,8 @@ classdef microperimetry_gui < matlab.apps.AppBase
             figure_handle = figure();
             figure_handle.Visible = "off";
             figure_handle.Position(3:4) = app.DisplayPanel.Position(3:4);
-            app.axes.transplant(figure_handle);
-            cleanup = onCleanup(@()app.axes.transplant(app.DisplayPanel));
+            app.axes.set_parent(figure_handle);
+            cleanup = onCleanup(@()app.axes.set_parent(app.DisplayPanel));
             
             try
                 switch filters(index)

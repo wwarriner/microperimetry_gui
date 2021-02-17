@@ -61,7 +61,7 @@ classdef Colorbar < handle
             cb.Visible = obj.visible;
         end
         
-        function transplant(obj, new_parent)
+        function set_parent(obj, new_parent)
             obj.axes_handle.Parent = new_parent;
             obj.parent = new_parent;
         end
@@ -77,4 +77,3 @@ classdef Colorbar < handle
         VERTICAL_PAD_FRACTION (1,1) double {mustBeReal,mustBeFinite} = 0.4
     end
 end
-

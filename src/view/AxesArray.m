@@ -48,15 +48,15 @@ classdef AxesArray < handle
             obj.apply(@(ax,row,col)obj.update_position(ax, row, col));
         end
 
-        function transplant(obj, new_parent)
+        function set_parent(obj, new_parent)
             if ~isempty(obj.axes_handles)
-                obj.apply(@(ax,row,col)ax.transplant(new_parent));
+                obj.apply(@(ax,row,col)ax.set_parent(new_parent));
             end
             if ~isempty(obj.left_colorbar)
-                obj.left_colorbar.transplant(new_parent);
+                obj.left_colorbar.set_parent(new_parent);
             end
             if ~isempty(obj.right_colorbar)
-                obj.right_colorbar.transplant(new_parent);
+                obj.right_colorbar.set_parent(new_parent);
             end
             obj.parent = new_parent;
         end
