@@ -1,11 +1,11 @@
-classdef MicroperimetryAxes < Axes
+classdef MicroperimetryAxes < DualUnitAxes
     properties
-        laterality (1,1) string % update_laterality()
-        vision (1,1) string % update_values()
-        class (1,1) string % update_values()
-        data_type (1,1) string % update_values()
-        labels_visible (1,1) string % {"off", "on"}, update_label_visibility()
-        point_size (1,1) double = 60 % update_appearance()
+        laterality (1,1) string
+        vision (1,1) string
+        class (1,1) string
+        data_type (1,1) string
+        labels_visible (1,1) string % {"off", "on"}
+        point_size (1,1) double = 60
     end
     
     properties (Constant)

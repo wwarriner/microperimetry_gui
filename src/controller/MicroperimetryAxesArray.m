@@ -1,13 +1,13 @@
 classdef MicroperimetryAxesArray < AxesArray
     properties
-        laterality (1,1) string % update_laterality()
-        left_class (1,1) string % update_values()
-        left_data_type (1,1) string % update_values()
-        center_class (1,1) string % update_values()
-        center_data_type (1,1) string % update_values()
-        right_class (1,1) string % update_values()
-        right_data_type (1,1) string % update_values()
-        labels_visible (1,1) string % {"off", "on"}, update_label_visiblity()
+        laterality (1,1) string
+        left_class (1,1) string
+        left_data_type (1,1) string
+        center_class (1,1) string
+        center_data_type (1,1) string
+        right_class (1,1) string
+        right_data_type (1,1) string
+        labels_visible (1,1) string % {"off", "on"}
     end
     
     properties (Constant)
