@@ -15,6 +15,10 @@ classdef Colorbar < handle
         visible (1,1) string = "on"
     end
     
+    properties (Constant)
+        WIDTH (1,1) double = 70 % px
+    end
+    
     methods
         function obj = Colorbar(parent)
             ax = axes(parent);
