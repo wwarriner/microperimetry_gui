@@ -1,4 +1,13 @@
 classdef AxesFormat < handle & matlab.mixin.Copyable
+    %{
+    A class holding used to format axes-like objects. The class exists to
+    simplify setting the same properties on multiple axes in an AxesArray
+    object.
+
+    Most properties are pass-through for built-in Axes properties. A colorbar
+    must also be set, dictating which Colorbar object will be used with the
+    affected axes-like object. Sets the clim and colormap properties.
+    %}
     properties
         x_label (:,1) string = ""
         x_lim (2,1) double = [0 1]
@@ -18,7 +27,7 @@ classdef AxesFormat < handle & matlab.mixin.Copyable
     end
     
     methods
-        function apply(obj, ax)
+        function apply(obj, ax, ~, ~)
             ax.XLabel.String = obj.x_label;
             ax.XLabel.FontName = obj.font_name;
             ax.XLabel.FontSize = obj.font_size;
@@ -26,7 +35,7 @@ classdef AxesFormat < handle & matlab.mixin.Copyable
             ax.XLim = obj.x_lim;
             ax.XTick = obj.x_tick;
             ax.XTickLabel = obj.x_tick_label;
-
+            
             ax.YLabel.String = obj.y_label;
             ax.YLabel.FontName = obj.font_name;
             ax.YLabel.FontSize = obj.font_size;
@@ -43,4 +52,3 @@ classdef AxesFormat < handle & matlab.mixin.Copyable
         end
     end
 end
-

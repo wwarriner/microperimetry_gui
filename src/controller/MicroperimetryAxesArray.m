@@ -1,13 +1,20 @@
 classdef MicroperimetryAxesArray < AxesArray
+    %{
+    Microperimetry-specific subclass of AxesArray
+    
+    Knows how to respond to and coordinates changes in laterality, label
+    visibility among multiple MicroperimetryAxes. Has 3 class along columns, and
+    2 rows featuring Mesopic and Scotopic vision to facilitate comparison.
+    %}
     properties
-        laterality (1,1) string % update_laterality()
-        left_class (1,1) string % update_values()
-        left_data_type (1,1) string % update_values()
-        center_class (1,1) string % update_values()
-        center_data_type (1,1) string % update_values()
-        right_class (1,1) string % update_values()
-        right_data_type (1,1) string % update_values()
-        labels_visible (1,1) string % {"off", "on"}, update_label_visiblity()
+        laterality (1,1) string
+        left_class (1,1) string
+        left_data_type (1,1) string
+        center_class (1,1) string
+        center_data_type (1,1) string
+        right_class (1,1) string
+        right_data_type (1,1) string
+        labels_visible (1,1) string % {"off", "on"}
     end
     
     properties (Constant)
@@ -17,6 +24,10 @@ classdef MicroperimetryAxesArray < AxesArray
     
     methods
         function obj = MicroperimetryAxesArray(parent)
+            %{
+            Inputs:
+            parent - container object such as figure or uipanel
+            %}
             obj = obj@AxesArray(...
                 parent, ...
                 MicroperimetryAxesArray.ROW_COUNT, ...
@@ -25,6 +36,9 @@ classdef MicroperimetryAxesArray < AxesArray
         end
         
         function update(obj)
+            %{
+            Updates visual representation of object
+            %}
             obj.update_laterality();
             obj.update_values();
             obj.update_label_visibility();

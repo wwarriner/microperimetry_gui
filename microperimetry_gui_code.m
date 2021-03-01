@@ -14,25 +14,10 @@ classdef microperimetry_gui < matlab.apps.AppBase
         SaveFigureAsButton       matlab.ui.control.Button
         LeftColumnSourceLabel    matlab.ui.control.Label
         LeftColumnTree           matlab.ui.container.Tree
-        NodeLeft                 matlab.ui.container.TreeNode
-        NodeLeft1                matlab.ui.container.TreeNode
-        NodeLeft2                matlab.ui.container.TreeNode
-        NodeLeft3                matlab.ui.container.TreeNode
-        NodeLeft4                matlab.ui.container.TreeNode
         CenterColumnSourceLabel  matlab.ui.control.Label
         CenterColumnTree         matlab.ui.container.Tree
-        NodeCenter               matlab.ui.container.TreeNode
-        NodeCenter1              matlab.ui.container.TreeNode
-        NodeCenter2              matlab.ui.container.TreeNode
-        NodeCenter3              matlab.ui.container.TreeNode
-        NodeCenter4              matlab.ui.container.TreeNode
         RightColumnSourceLabel   matlab.ui.control.Label
         RightColumnTree          matlab.ui.container.Tree
-        NodeRight                matlab.ui.container.TreeNode
-        NodeRight1               matlab.ui.container.TreeNode
-        NodeRight2               matlab.ui.container.TreeNode
-        NodeRight3               matlab.ui.container.TreeNode
-        NodeRight4               matlab.ui.container.TreeNode
         DisplayPanel             matlab.ui.container.Panel
     end
     
@@ -286,8 +271,8 @@ classdef microperimetry_gui < matlab.apps.AppBase
             figure_handle = figure();
             figure_handle.Visible = "off";
             figure_handle.Position(3:4) = app.DisplayPanel.Position(3:4);
-            app.axes.transplant(figure_handle);
-            cleanup = onCleanup(@()app.axes.transplant(app.DisplayPanel));
+            app.axes.set_parent(figure_handle);
+            cleanup = onCleanup(@()app.axes.set_parent(app.DisplayPanel));
             
             try
                 switch filters(index)
@@ -442,26 +427,6 @@ classdef microperimetry_gui < matlab.apps.AppBase
             app.LeftColumnTree.SelectionChangedFcn = createCallbackFcn(app, @LeftColumnTreeSelectionChanged, true);
             app.LeftColumnTree.Position = [11 631 158 106];
             
-            % Create NodeLeft
-            app.NodeLeft = uitreenode(app.LeftColumnTree);
-            app.NodeLeft.Text = 'NodeLeft';
-            
-            % Create NodeLeft1
-            app.NodeLeft1 = uitreenode(app.NodeLeft);
-            app.NodeLeft1.Text = 'NodeLeft1';
-            
-            % Create NodeLeft2
-            app.NodeLeft2 = uitreenode(app.NodeLeft);
-            app.NodeLeft2.Text = 'NodeLeft2';
-            
-            % Create NodeLeft3
-            app.NodeLeft3 = uitreenode(app.NodeLeft);
-            app.NodeLeft3.Text = 'NodeLeft3';
-            
-            % Create NodeLeft4
-            app.NodeLeft4 = uitreenode(app.NodeLeft);
-            app.NodeLeft4.Text = 'NodeLeft4';
-            
             % Create CenterColumnSourceLabel
             app.CenterColumnSourceLabel = uilabel(app.OptionsPanel);
             app.CenterColumnSourceLabel.FontSize = 14;
@@ -473,26 +438,6 @@ classdef microperimetry_gui < matlab.apps.AppBase
             app.CenterColumnTree.SelectionChangedFcn = createCallbackFcn(app, @CenterColumnTreeSelectionChanged, true);
             app.CenterColumnTree.Position = [11 492 158 106];
             
-            % Create NodeCenter
-            app.NodeCenter = uitreenode(app.CenterColumnTree);
-            app.NodeCenter.Text = 'NodeCenter';
-            
-            % Create NodeCenter1
-            app.NodeCenter1 = uitreenode(app.NodeCenter);
-            app.NodeCenter1.Text = 'NodeCenter1';
-            
-            % Create NodeCenter2
-            app.NodeCenter2 = uitreenode(app.NodeCenter);
-            app.NodeCenter2.Text = 'NodeCenter2';
-            
-            % Create NodeCenter3
-            app.NodeCenter3 = uitreenode(app.NodeCenter);
-            app.NodeCenter3.Text = 'NodeCenter3';
-            
-            % Create NodeCenter4
-            app.NodeCenter4 = uitreenode(app.NodeCenter);
-            app.NodeCenter4.Text = 'NodeCenter4';
-            
             % Create RightColumnSourceLabel
             app.RightColumnSourceLabel = uilabel(app.OptionsPanel);
             app.RightColumnSourceLabel.FontSize = 14;
@@ -503,26 +448,6 @@ classdef microperimetry_gui < matlab.apps.AppBase
             app.RightColumnTree = uitree(app.OptionsPanel);
             app.RightColumnTree.SelectionChangedFcn = createCallbackFcn(app, @RightColumnTreeSelectionChanged, true);
             app.RightColumnTree.Position = [11 352 158 106];
-            
-            % Create NodeRight
-            app.NodeRight = uitreenode(app.RightColumnTree);
-            app.NodeRight.Text = 'NodeRight';
-            
-            % Create NodeRight1
-            app.NodeRight1 = uitreenode(app.NodeRight);
-            app.NodeRight1.Text = 'NodeRight1';
-            
-            % Create NodeRight2
-            app.NodeRight2 = uitreenode(app.NodeRight);
-            app.NodeRight2.Text = 'NodeRight2';
-            
-            % Create NodeRight3
-            app.NodeRight3 = uitreenode(app.NodeRight);
-            app.NodeRight3.Text = 'NodeRight3';
-            
-            % Create NodeRight4
-            app.NodeRight4 = uitreenode(app.NodeRight);
-            app.NodeRight4.Text = 'NodeRight4';
             
             % Create DisplayPanel
             app.DisplayPanel = uipanel(app.UIFigure);
