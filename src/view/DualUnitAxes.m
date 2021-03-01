@@ -38,6 +38,10 @@ classdef DualUnitAxes < handle
     
     methods
         function obj = DualUnitAxes(parent)
+            %{
+            Inputs:
+            parent - container object such as figure or uipanel
+            %}
             if nargin < 1
                 parent = figure();
             end
@@ -72,7 +76,6 @@ classdef DualUnitAxes < handle
             be set this way except Position and Parent. To set those, please use
             the set_* accessor functions provided.
             %}
-            
             p = obj.primary_ax.Position;
             r = obj.primary_ax.Parent;
             [varargout{1:nargout}] = fn(obj.primary_ax);
@@ -90,7 +93,6 @@ classdef DualUnitAxes < handle
             be set this way except Position and Parent. To set those, please use
             the set_* accessor functions provided.
             %}
-            
             p = obj.primary_ax.Position;
             r = obj.primary_ax.Parent;
             [varargout{1:nargout}] = fn(obj.secondary_ax);

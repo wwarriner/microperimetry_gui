@@ -1,4 +1,10 @@
 classdef Colorbar < handle
+    %{
+    Colorbar is a class that encapsulates the behavior of a colorbar
+    representing multiple axes in an AxesArray object. It is used to coordinate
+    colormaps and color scales between the axes-like objects in an AxesArray, as
+    well as the display those representations in a parent object.
+    %}
     properties
         c_label (:,1) string = ""
         c_lim (2,1) double = [0 1]
@@ -21,6 +27,10 @@ classdef Colorbar < handle
     
     methods
         function obj = Colorbar(parent)
+            %{
+            Inputs:
+            parent - a container object such as a figure or uipanel
+            %}
             ax = axes(parent);
             ax.Units = "pixels";
             
@@ -46,6 +56,9 @@ classdef Colorbar < handle
         end
         
         function update(obj)
+            %{
+            Updates the appearance of the object.
+            %}
             ax = obj.axes_handle;
             colormap(ax, obj.cmap);
             caxis(ax, obj.c_lim);
@@ -66,6 +79,9 @@ classdef Colorbar < handle
         end
         
         function set_parent(obj, new_parent)
+            %{
+            Sets the parent of the object.
+            %}
             obj.axes_handle.Parent = new_parent;
             obj.parent = new_parent;
         end

@@ -1,5 +1,9 @@
 classdef EtdrsGrid < handle
     %{
+    Encapsulates the behavior of the standard ETDRS grid used in ophthalmological
+    research of retinal and fundus disease progression. Knows how to draw itself
+    and respond to changes in laterality.
+    
     Units are in MM, apply to MM axes.
     %}
     
@@ -9,6 +13,10 @@ classdef EtdrsGrid < handle
     
     methods
         function obj = EtdrsGrid(parent)
+            %{
+            Inputs:
+            parent - container object such as figure or uipanel
+            %}
             is_held = ishold(parent);
             hold(parent, "on");
             
@@ -35,6 +43,9 @@ classdef EtdrsGrid < handle
         end
         
         function update(obj)
+            %{
+            Updates visual representation of object
+            %}
             c = obj.compute_optic_disk_center();
             xy = obj.compute_circle_points(c, obj.OPTIC_DISK_RADIUS);
             obj.optic_disk.XData = xy(:, 1);

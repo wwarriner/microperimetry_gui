@@ -1,4 +1,9 @@
 classdef LabeledScatter < handle
+    %{
+    Encapsulates the behavior of a scatter() plot with selectable label
+    visibility. Knows how to draw itself on its parent and change in response to
+    changes in properties.
+    %}
     properties
         x (:,1) double {mustBeReal,mustBeFinite}
         y (:,1) double {mustBeReal,mustBeFinite}
@@ -9,6 +14,10 @@ classdef LabeledScatter < handle
     
     methods
         function obj = LabeledScatter(parent)
+            %{
+            Inputs:
+            parent - container object such as figure or uipanel
+            %}
             s = scatter(parent, 0, 0, 1, 0, "filled");
             s.XData = [];
             s.YData = [];
@@ -20,6 +29,9 @@ classdef LabeledScatter < handle
         end
         
         function update(obj)
+            %{
+            Updates visual representation of object
+            %}
             req = obj.update_request;
             if obj.REBUILD_UPDATE <= req
                 obj.rebuild_labels();

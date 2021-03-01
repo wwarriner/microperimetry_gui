@@ -1,8 +1,11 @@
 classdef CompassRose < handle
     %{
+    Encapsulates the concept of an ophthalmological compass, i.e. the NSTI
+    compass. _N_asal, _S_uperior, _T_emporal, _I_nferior. Knows how to draw
+    itself, and change in response to a selected laterality.
+
     Units are in MM, apply to MM axes.
     %}
-    
     properties
         laterality (1,1) string = Definitions.DEFAULT_LATERALITY_VALUE
         
@@ -13,6 +16,10 @@ classdef CompassRose < handle
     
     methods
         function obj = CompassRose(parent)
+            %{
+            Inputs:
+            parent - container object such as figure or uipanel
+            %}
             is_held = ishold(parent);
             hold(parent, "on");
             
@@ -28,6 +35,9 @@ classdef CompassRose < handle
         end
         
         function update(obj)
+            %{
+            Updates graphical representation of object
+            %}
             xyuv = obj.compute_arrow_xyuv();
             qh = obj.quiver_handle;
             qh.XData = xyuv(:, 1);
@@ -143,4 +153,3 @@ classdef CompassRose < handle
         end
     end
 end
-
