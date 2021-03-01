@@ -63,7 +63,8 @@ for row = 1 : ROW_COUNT
     for column = 1 : COLUMN_COUNT
         column_name = column_names(column);
         
-        ax = Axes(fh);
+        ax = DualUnitAxes(fh);
+        ax.primary_to_secondary_scale = Definitions.MM_PER_DEG;
         
         df = deg_fmt.copy();
         df.x_label = ECCENTRICITY_DEG;
