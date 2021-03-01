@@ -30,6 +30,10 @@ classdef Data < handle
     
     methods
         function load_csv(obj, file_path)
+            %{
+            Inputs:
+            file_path - path to any file readable by readtable()
+            %}
             in_t = readtable(file_path);
             
             vars = string(in_t.Properties.VariableNames);
@@ -66,15 +70,36 @@ classdef Data < handle
         end
         
         function value = get_classes(obj)
+            %{
+            Returns:
+            value - list of patient classes/categories available
+            %}
             value = unique(obj.t.class, "stable");
         end
         
         function value = get_data_types(obj, class)
+            %{
+            Inputs:
+            class - one of the values returned by get_classes()
+            
+            Returns:
+            value - list of data types available for the supplied class, e.g.
+            median, mean, individual, etc
+            %}
             indices = lower(obj.t.class) == lower(class);
             value = unique(obj.t(indices, :).data_type, "stable");
         end
         
         function value = get_values(obj, vision, class, data_type)
+            %{
+            Inputs:
+            vision - one of Mesopic/Scotopic
+            class - one of the values returned by get_classes()
+            data_type - one of the values returned by get_data_types(class)
+            
+            Returns:
+            value - table of values limited to vision, class and data_type
+            %}
             indices = lower(obj.t.vision) == lower(vision) ...
                 & lower(obj.t.class) == lower(class) ...
                 & lower(obj.t.data_type) == lower(data_type);

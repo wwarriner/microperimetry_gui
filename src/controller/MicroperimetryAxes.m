@@ -1,4 +1,12 @@
 classdef MicroperimetryAxes < DualUnitAxes
+    %{
+    A microperimetry specific subclass of DualUnitAxes.
+    
+    Coordinates changes in laterality of children, label visibility of scatter
+    plot, and knows how to print its own sensible axes and tick labels based on
+    vision, class and data_type, as well as pull the relevant data from the
+    supplied Data object.
+    %}
     properties
         laterality (1,1) string
         vision (1,1) string
@@ -17,6 +25,16 @@ classdef MicroperimetryAxes < DualUnitAxes
     
     methods
         function obj = MicroperimetryAxes(parent, data, location)
+            %{
+            Inputs:
+            parent - container object such as figure or uipanel
+            data - Data object
+            location - logical 4-vector whose entries are TOP, BOTTOM, LEFT,
+            RIGHT, indicating the position in an AxesArray. Used for deciding
+            whether to draw axes and tick labels.
+            % TODO pull location and draw decision up to MicroperimetryAxesArray
+            % simply expose specific control of drawing of each location directly
+            %}
             obj = obj@DualUnitAxes(parent);
             obj.primary_to_secondary_scale = Definitions.MM_PER_DEG;
             scatter = obj.apply_to_degrees_axes(@LabeledScatter);
@@ -27,20 +45,34 @@ classdef MicroperimetryAxes < DualUnitAxes
         end
         
         function varargout = apply_to_degrees_axes(obj, fn)
+            %{
+            see DualUnitAxes.apply_to_*_axes()
+            %}
             [varargout{1:nargout}] = obj.apply_to_primary_axes(fn);
         end
         
         function varargout = apply_to_mm_axes(obj, fn)
+            %{
+            see DualUnitAxes.apply_to_*_axes()
+            %}
             [varargout{1:nargout}] = obj.apply_to_secondary_axes(fn);
         end
         
         function set_degrees_format(obj, format)
+            %{
+            Inputs:
+            format - AxesFormat object
+            %}
             assert(isa(format, "AxesFormat"));
             obj.make_request(obj.FORMAT_UPDATE);
             obj.degrees_format = format;
         end
         
         function set_mm_format(obj, format)
+            %{
+            Inputs:
+            format - AxesFormat object
+            %}
             assert(isa(format, "AxesFormat"));
             obj.make_request(obj.FORMAT_UPDATE);
             obj.mm_format = format;
@@ -54,6 +86,14 @@ classdef MicroperimetryAxes < DualUnitAxes
         end
         
         function update(obj)
+            %{
+            Updates visual representation of object
+    
+            Note to developers: updating this class uses a request-driven system.
+            Changes to the properties make a request to an internal handling system.
+            When update() is called, pending requests are handled efficienctly, to
+            minimize draw time and complexity.
+            %}
             req = obj.update_request;
             req = unique(req);
             if isempty(req)

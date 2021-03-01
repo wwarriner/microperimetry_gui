@@ -1,4 +1,8 @@
 classdef Definitions
+    %{
+    A collection of Definitions for the specific problem of Ophthalmological
+    Microperimetry evaluation and analysis.
+    %}
     properties (Constant)
         LATERALITY = "laterality"
         OD_LATERALITY_VALUE = "od"

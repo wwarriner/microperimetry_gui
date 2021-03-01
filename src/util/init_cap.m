@@ -1,4 +1,7 @@
 function s = init_cap(s)
+%{
+capitalizes the first letter of the input string
+%}
 
 assert(isstring(s));
 assert(isscalar(s));

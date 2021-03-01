@@ -31,6 +31,11 @@ classdef LabeledScatter < handle
         function update(obj)
             %{
             Updates visual representation of object
+    
+            Note to developers: updating this class uses a request-driven system.
+            Changes to the properties make a request to an internal handling system.
+            When update() is called, pending requests are handled efficienctly, to
+            minimize draw time and complexity.
             %}
             req = obj.update_request;
             if obj.REBUILD_UPDATE <= req
