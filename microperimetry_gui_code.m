@@ -175,20 +175,20 @@ classdef microperimetry_gui < matlab.apps.AppBase
             ax_array.set_right_colorbar(z_scores_colorbar);
             for row = 1 : row_count
                 for col = 1 : column_count
-                    location = false(1, 4);
-                    if row == 1; location(MicroperimetryAxes.TOP) = true; end
-                    if row == row_count; location(MicroperimetryAxes.BOTTOM) = true; end
-                    if col == 1; location(MicroperimetryAxes.LEFT) = true; end
-                    if col == column_count; location(MicroperimetryAxes.RIGHT) = true; end
-                    ax = MicroperimetryAxes(app.DisplayPanel, d, location);
+                    ax = MicroperimetryAxes(app.DisplayPanel, d);
                     ax.set_degrees_format(degrees_format.copy());
                     ax.set_mm_format(mm_format.copy());
+                    
+                    % ALL GET GRID
                     grid = ax.apply_to_mm_axes(@EtdrsGrid);
                     ax.register_feature("grid", grid);
+                    
+                    % BOTTOM RIGHT CORNER ONLY GETS ROSE
                     if row == row_count && col == column_count
                         rose = ax.apply_to_mm_axes(@CompassRose);
                         ax.register_feature("rose", rose);
                     end
+                    
                     ax.labels_visible = lower(string(app.ValueDisplaySwitch.Value));
                     ax.update();
                     ax_array.set_axes(ax, row, col);
@@ -208,6 +208,7 @@ classdef microperimetry_gui < matlab.apps.AppBase
             
             app.update_trees();
             app.axes.update_layout();
+            app.axes.update();
         end
         
         % Selection changed function: LateralityButtonGroup

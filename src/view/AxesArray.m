@@ -91,12 +91,14 @@ classdef AxesArray < handle
         end
     end
     
+    properties (Access = protected)
+        row_count (1,1)
+        column_count (1,1)
+    end
+    
     properties (Access = private)
         parent
         axes_handles (:,:) cell
-        
-        row_count (1,1)
-        column_count (1,1)
         
         pre_pad (:,:)
         post_pad (:,:)

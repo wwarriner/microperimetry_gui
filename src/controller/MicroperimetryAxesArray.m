@@ -39,13 +39,21 @@ classdef MicroperimetryAxesArray < AxesArray
             %{
             Updates visual representation of object
             %}
-            obj.update_laterality();
-            obj.update_values();
-            obj.update_label_visibility();
+            obj.apply(@(ax,r,c)obj.update_axes_label_visibility_impl(ax, r, c));
+            obj.apply(@(ax,r,c)obj.update_axes_laterality(ax, r, c));
+            obj.apply(@(ax,r,c)obj.update_axes_values(ax, r, c));
+            obj.apply(@(ax,r,c)obj.update_axes_label_visibility(ax, r, c));
         end
     end
     
     methods (Access = private)
+        function update_axes_label_visibility_impl(obj, ax, row, col)
+            ax.axes_labels_visible(MicroperimetryAxes.TOP) = row == 1;
+            ax.axes_labels_visible(MicroperimetryAxes.BOTTOM) = row == obj.row_count;
+            ax.axes_labels_visible(MicroperimetryAxes.LEFT) = col == 1;
+            ax.axes_labels_visible(MicroperimetryAxes.RIGHT) = col == obj.column_count;
+        end
+        
         function update_axes_laterality(obj, ax, ~, ~)
             ax.laterality = obj.laterality;
             ax.update();
@@ -84,18 +92,6 @@ classdef MicroperimetryAxesArray < AxesArray
         function update_axes_label_visibility(obj, ax, ~, ~)
             ax.labels_visible = obj.labels_visible;
             ax.update();
-        end
-        
-        function update_laterality(obj)
-            obj.apply(@(ax,r,c)obj.update_axes_laterality(ax, r, c));
-        end
-        
-        function update_values(obj)
-            obj.apply(@(ax,r,c)obj.update_axes_values(ax, r, c));
-        end
-        
-        function update_label_visibility(obj)
-            obj.apply(@(ax,r,c)obj.update_axes_label_visibility(ax, r, c));
         end
     end
 end

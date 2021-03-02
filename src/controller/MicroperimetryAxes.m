@@ -1,7 +1,7 @@
 classdef MicroperimetryAxes < DualUnitAxes
     %{
     A microperimetry specific subclass of DualUnitAxes.
-    
+
     Coordinates changes in laterality of children, label visibility of scatter
     plot, and knows how to print its own sensible axes and tick labels based on
     vision, class and data_type, as well as pull the relevant data from the
@@ -14,6 +14,7 @@ classdef MicroperimetryAxes < DualUnitAxes
         data_type (1,1) string
         labels_visible (1,1) string % {"off", "on"}
         point_size (1,1) double = 60
+        axes_labels_visible (1,4) logical = true(1,4) % use TOP, BOTTOM, LEFT, RIGHT
     end
     
     properties (Constant)
@@ -24,23 +25,17 @@ classdef MicroperimetryAxes < DualUnitAxes
     end
     
     methods
-        function obj = MicroperimetryAxes(parent, data, location)
+        function obj = MicroperimetryAxes(parent, data)
             %{
             Inputs:
             parent - container object such as figure or uipanel
             data - Data object
-            location - logical 4-vector whose entries are TOP, BOTTOM, LEFT,
-            RIGHT, indicating the position in an AxesArray. Used for deciding
-            whether to draw axes and tick labels.
-            % TODO pull location and draw decision up to MicroperimetryAxesArray
-            % simply expose specific control of drawing of each location directly
             %}
             obj = obj@DualUnitAxes(parent);
             obj.primary_to_secondary_scale = Definitions.MM_PER_DEG;
             scatter = obj.apply_to_degrees_axes(@LabeledScatter);
             obj.scatter = scatter;
             obj.data = data;
-            obj.location = location;
             obj.features = containers.Map("keytype", "char", "valuetype", "any");
         end
         
@@ -88,7 +83,7 @@ classdef MicroperimetryAxes < DualUnitAxes
         function update(obj)
             %{
             Updates visual representation of object
-    
+
             Note to developers: updating this class uses a request-driven system.
             Changes to the properties make a request to an internal handling system.
             When update() is called, pending requests are handled efficienctly, to
@@ -176,6 +171,13 @@ classdef MicroperimetryAxes < DualUnitAxes
             end
             obj.point_size = value;
         end
+        
+        function set.axes_labels_visible(obj, value)
+            if value ~= obj.axes_labels_visible
+                obj.make_request(obj.FORMAT_UPDATE);
+            end
+            obj.axes_labels_visible = value;
+        end
     end
     
     properties
@@ -254,10 +256,10 @@ classdef MicroperimetryAxes < DualUnitAxes
             m.x_label = [x_label, obj.ECCENTRICITY_MM];
             m.y_label = obj.ECCENTRICITY_MM;
             
-            if ~obj.location(obj.TOP); m.x_label = ""; m.x_tick = []; m.x_tick_label = []; end
-            if ~obj.location(obj.BOTTOM); d.x_label = ""; d.x_tick = []; d.x_tick_label = []; end
-            if ~obj.location(obj.LEFT); d.y_label = ""; d.y_tick = []; d.y_tick_label = []; end
-            if ~obj.location(obj.RIGHT); m.y_label = ""; m.y_tick = []; m.y_tick_label = []; end
+            if ~obj.axes_labels_visible(obj.TOP); m.x_label = ""; m.x_tick = []; m.x_tick_label = []; end
+            if ~obj.axes_labels_visible(obj.BOTTOM); d.x_label = ""; d.x_tick = []; d.x_tick_label = []; end
+            if ~obj.axes_labels_visible(obj.LEFT); d.y_label = ""; d.y_tick = []; d.y_tick_label = []; end
+            if ~obj.axes_labels_visible(obj.RIGHT); m.y_label = ""; m.y_tick = []; m.y_tick_label = []; end
             
             obj.apply_to_degrees_axes(@d.apply);
             obj.apply_to_mm_axes(@m.apply);
@@ -302,4 +304,3 @@ classdef MicroperimetryAxes < DualUnitAxes
         end
     end
 end
-
